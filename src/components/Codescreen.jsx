@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 const CodeDisplay = ({ title, code }) => {
   return (
     <motion.div
-      className="w-full max-w-3xl mx-auto bg-gray-900 rounded-lg shadow-lg overflow-hidden"
+      className="w-full max-w-3xl bg-gray-900 rounded-lg shadow-lg overflow-hidden"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}                                                                                                        
       transition={{ duration: 0.3 }}

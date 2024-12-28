@@ -23,6 +23,37 @@ export default function Reactpage() {
         Projelerimizi <b>vite</b> ile kurmak daha sağlıklıdır. Çünkü vite
         projelerimizi hızlandırır ve çoğu framework de bunu destekler.
       </p>
+      <CodeScreen title="Terminal" code="? Select a framework: › - Use arrow-keys. Return to submit.
+❯   Vanilla
+    Vue
+    React
+    Preact
+    Lit
+    Svelte
+    Solid
+    Qwik
+    Angular
+    Others" />
+    <p>Karşımıza bu seçenekler çıkar. Burada kullanıcağımız dili seçiyoruz.</p>
+    <CodeScreen title="Terminal" code="✔ Select a framework: › React
+? Select a variant: › - Use arrow-keys. Return to submit.
+❯   TypeScript
+    TypeScript + SWC
+    JavaScript
+    JavaScript + SWC
+    React Router v7 ↗" />
+    <p>Bu adımda ise react'ı hangi dil seçeneği ile kullanacağımızı seçiyoruz. Seçtikten sonra projemiz kurulmuş oluyor.</p>
+    <CodeScreen title="Terminal" code="Done. Now run:
+
+  cd proje-ismi
+  npm install
+  npm run dev"/>
+<p>Bu son adımımızda projemizi çalıştırmak için gerekli komutları çalıştırıyoruz.
+  Artık projemiz hazır ve çalışır durumda.
+</p>
+
+
     </div>
+
   );
 }
