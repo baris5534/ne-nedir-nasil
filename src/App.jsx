@@ -5,7 +5,7 @@ import './App.css';
 import Sidebar from "./components/Sidebar";
 import Home from "./pages/Home";
 import Reacts from "./pages/Reactpage";
-import { div } from "framer-motion/client";
+import { div  } from "framer-motion/client";
 
 const App = () => {
   return (
