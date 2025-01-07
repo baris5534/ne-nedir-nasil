@@ -70,12 +70,12 @@ export default function Sidebar({ isOpen, onClose }) {
 
             {/* Sidebar */}
             <div 
-                className={`fixed top-1 left-0 h-[calc(100vh-4rem)] w-[280px] bg-gray-900 border-r border-white/10 
-                    transform transition-transform duration-300 ease-in-out z-50
-                    lg:transform-none lg:z-30 lg:relative
+                className={`fixed top-20 left-0 h-[calc(100vh-4rem)] w-[280px] bg-gray-900 border-r border-white/10 
+                    transform transition-transform duration-300 ease-in-out z-50 overflow-y-auto
+                    lg:translate-x-0 lg:z-30 lg:fixed
                     ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
             >
-                <div className="h-full overflow-y-auto">
+                <div className="h-full">
                     <div className="p-6">
                         {/* Header */}
                         <div className="flex justify-between items-center mb-8">

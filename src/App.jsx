@@ -25,13 +25,13 @@ const App = () => {
         />
 
         {/* Main Layout */}
-        <div className="pt-20 flex">
+        <div className="flex">
           {/* Sidebar */}
           <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
           {/* Main Content */}
-          <main className="flex-1 lg:ml-[10px] min-h-[calc(100vh-4rem)]">
-            <div className="max-w-[100%] mx-auto px-2 py-1">
+          <main className="flex-1 ml-0 lg:ml-[280px] min-h-screen pt-16">
+            <div className="max-w-[100%] mx-auto p-4">
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/admin" element={<AdminPanel />} />

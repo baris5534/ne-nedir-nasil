@@ -27,39 +27,42 @@ export default function CategoryManager({ onCategoryAdded }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!categoryName.trim()) {
+      alert('Kategori adı boş olamaz');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const categoryData = {
+        name: categoryName,
+        updatedAt: new Date().toISOString()
+      };
+
       if (editingCategory) {
-        // Kategori güncelleme
-        await updateDoc(doc(db, 'categories', editingCategory.id), {
-          name: categoryName,
-          updatedAt: new Date().toISOString()
-        });
-        alert('Kategori başarıyla güncellendi!');
-        setEditingCategory(null);
+        await updateDoc(doc(db, 'categories', editingCategory.id), categoryData);
+        alert('Kategori güncellendi!');
       } else {
-        // Yeni kategori ekleme
-        await addDoc(collection(db, 'categories'), {
-          name: categoryName,
-          createdAt: new Date().toISOString()
-        });
-        alert('Kategori başarıyla eklendi!');
+        categoryData.createdAt = new Date().toISOString();
+        await addDoc(collection(db, 'categories'), categoryData);
+        alert('Kategori eklendi!');
       }
+      
+      // Formu sıfırla
       setCategoryName('');
-      fetchCategories();
+      setEditingCategory(null);
+      
+      // Listeyi yenile
+      await fetchCategories();
       if (onCategoryAdded) onCategoryAdded();
+
     } catch (error) {
       console.error('Hata:', error);
-      alert(editingCategory ? 'Kategori güncellenirken bir hata oluştu' : 'Kategori eklenirken bir hata oluştu');
+      alert(`Hata: ${error.message}`);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleEdit = (category) => {
-    setEditingCategory(category);
-    setCategoryName(category.name);
   };
 
   const handleDelete = async (categoryId) => {
@@ -76,49 +79,70 @@ export default function CategoryManager({ onCategoryAdded }) {
     }
   };
 
-  const cancelEditing = () => {
-    setEditingCategory(null);
-    setCategoryName('');
-  };
-
   return (
     <div className="mb-8 p-4 bg-gray-800 rounded-lg">
       <h2 className="text-xl font-bold mb-4">Kategori Yönetimi</h2>
-      <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
+
+      {/* Kategori formu */}
+      <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
           value={categoryName}
           onChange={(e) => setCategoryName(e.target.value)}
-          className="flex-1 p-2 rounded bg-gray-700 border border-gray-600"
+          className="w-full p-2 rounded bg-gray-700 border border-gray-600"
           placeholder="Kategori adı"
           required
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 transition-colors"
-        >
-          {loading ? 'İşlem yapılıyor...' : (editingCategory ? 'Güncelle' : 'Ekle')}
-        </button>
-        {editingCategory && (
+
+        <div className="flex gap-2">
           <button
-            type="button"
-            onClick={cancelEditing}
-            className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-700"
+            type="submit"
+            disabled={loading}
+            className={`px-4 py-2 rounded transition-colors ${
+              loading 
+                ? 'bg-gray-600 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
-            İptal
+            {loading ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                İşlem yapılıyor...
+              </span>
+            ) : (
+              editingCategory ? 'Güncelle' : 'Ekle'
+            )}
           </button>
-        )}
+          
+          {editingCategory && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingCategory(null);
+                setCategoryName('');
+              }}
+              className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-700"
+            >
+              İptal
+            </button>
+          )}
+        </div>
       </form>
 
       {/* Kategori listesi */}
-      <div className="space-y-2">
+      <div className="space-y-2 mt-4">
         {categories.map(category => (
           <div key={category.id} className="flex items-center justify-between bg-gray-700 p-2 rounded">
             <span>{category.name}</span>
             <div className="space-x-2">
               <button
-                onClick={() => handleEdit(category)}
+                onClick={() => {
+                  setEditingCategory(category);
+                  setCategoryName(category.name);
+                }}
                 className="text-blue-400 hover:text-blue-300"
               >
                 Düzenle

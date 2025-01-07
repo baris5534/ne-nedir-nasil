@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '../firebase/config';
 import ReactMarkdown from 'react-markdown';
 import CodeScreen from '../components/Codescreen';
@@ -31,27 +31,32 @@ export default function Home() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         // Kategorileri getir
-        const categoriesSnapshot = await getDocs(
-          query(collection(db, 'categories'), orderBy('createdAt', 'asc'))
-        );
-        const categoriesData = categoriesSnapshot.docs.map(doc => ({
+        const categorySnapshot = await getDocs(collection(db, 'categories'));
+        const categoryData = categorySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
-        setCategories(categoriesData);
+        setCategories(categoryData);
 
         // Yazıları getir
-        const q = query(collection(db, 'posts'), orderBy('createdAt', 'asc'));
-        const querySnapshot = await getDocs(q);
-        const postsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setPosts(postsData);
+        const postSnapshot = await getDocs(
+          query(collection(db, 'posts'), orderBy('createdAt', 'desc'))
+        );
+        const postData = postSnapshot.docs.map(doc => {
+          const data = doc.data();
+          const category = categoryData.find(cat => cat.name === data.category);
+          return {
+            id: doc.id,
+            ...data,
+            categoryData: category
+          };
+        });
+        setPosts(postData);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Veri yüklenirken hata:', error);
         setError(error.message);
       } finally {
         setLoading(false);
@@ -63,23 +68,14 @@ export default function Home() {
 
   // Yazıları kategorilere göre grupla
   const postsByCategory = posts.reduce((acc, post) => {
-    if (!post.category) return acc;
-    if (!acc[post.category]) {
-      acc[post.category] = [];
+    if (post.category) {
+      if (!acc[post.category]) {
+        acc[post.category] = [];
+      }
+      acc[post.category].push(post);
     }
-    acc[post.category].push(post);
     return acc;
   }, {});
-
-  const getPostSummary = (blocks) => {
-    if (!blocks || !Array.isArray(blocks)) return '';
-    const firstTextBlock = blocks.find(block => block.type === 'text');
-    if (firstTextBlock && firstTextBlock.content) {
-      const content = String(firstTextBlock.content);
-      return content.length > 150 ? content.substring(0, 150) + '...' : content;
-    }
-    return '';
-  };
 
   if (loading) return <div className="text-center p-4">Yükleniyor...</div>;
   if (error) return <div className="text-red-500 text-center p-4">Hata: {error}</div>;
@@ -166,37 +162,109 @@ export default function Home() {
   );
 }
 
-// Post kartı bileşeni
 function PostCard({ post }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+
   return (
-    <motion.div variants={itemVariants}>
-      <Link 
-        to={`/blog/${post.id}`}
-        className="block rounded-xl overflow-hidden hover:transform hover:scale-[1.02] transition-all duration-300"
+    <>
+      <motion.div 
+        variants={itemVariants}
+        onClick={() => setIsOpen(true)}
       >
-        <article className="p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg border border-white/10">
-          <h3 className="text-xl font-bold mb-3 line-clamp-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-            {post.title}
-          </h3>
-          <div className="text-sm text-gray-400 mb-4">
-            {new Date(post.createdAt).toLocaleDateString('tr-TR')}
-          </div>
-          <div className="prose prose-sm prose-invert max-w-none mb-4 text-gray-300">
-            <ReactMarkdown>{post.blocks?.[0]?.content || ''}</ReactMarkdown>
-          </div>
-          {post.blocks?.[0]?.type === 'code' && (
-            <div className="text-xs text-blue-400 mb-4 flex items-center">
-              <span className="mr-2">⌨️</span>
-              <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                Kod içerir
-              </span>
+        <div className="block rounded-xl overflow-hidden hover:transform hover:scale-[1.02] transition-all duration-300 cursor-pointer">
+          <article className="p-6 h-[320px] bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg border border-white/10 flex flex-col">
+            <h3 className="text-xl font-bold line-clamp-1 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent flex-1 mb-3">
+              {post.title}
+            </h3>
+
+            <div className="text-sm text-gray-400 mb-2">
+              {new Date(post.createdAt).toLocaleDateString('tr-TR')}
             </div>
-          )}
-          <div className="text-sm bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent font-medium">
-            Devamını Oku →
-          </div>
-        </article>
-      </Link>
-    </motion.div>
+            
+            <div className="prose prose-sm prose-invert max-w-none flex-1 overflow-hidden">
+              <div className="line-clamp-3 text-sm text-gray-300">
+                {post.blocks?.[0]?.content?.substring(0, 150) || ''}...
+              </div>
+            </div>
+            {post.blocks?.[0]?.type === 'code' && (
+              <div className="text-xs text-blue-400 flex items-center mt-auto mb-2">
+                <span className="mr-2">⌨️</span>
+                <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                  Kod içerir
+                </span>
+              </div>
+            )}
+            <div className="text-sm bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent font-medium">
+              Devamını Oku →
+            </div>
+          </article>
+        </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.75, y: 100 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.75, y: 100 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="fixed inset-4 top-20 z-50 overflow-y-auto rounded-xl bg-gray-900/95 border border-white/10"
+            >
+              <div className="p-6 max-w-4xl mx-auto">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-4 bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
+                  {post.title}
+                </h1>
+
+                <div className="text-sm text-gray-400 mb-6">
+                  {post.category && (
+                    <>
+                      Kategori: {post.category}
+                      <span className="mx-2">•</span>
+                    </>
+                  )}
+                  {post.createdAt && (
+                    <>{new Date(post.createdAt).toLocaleDateString('tr-TR')}</>
+                  )}
+                </div>
+
+                <div className="space-y-6">
+                  {post.blocks?.map((block, index) => (
+                    <div key={index} className="overflow-x-auto">
+                      {block.type === 'text' ? (
+                        <div className="prose prose-invert max-w-none">
+                          <ReactMarkdown>{block.content}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        <div className="rounded-lg overflow-hidden">
+                          <CodeScreen code={block.code} title={block.codeTitle} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="fixed top-4 right-4 p-2 rounded-full bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
