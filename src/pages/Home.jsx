@@ -84,7 +84,7 @@ export default function Home() {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
+      className="min-h-screen bg-gray-900"
     >
       <div className="max-w-[1200px] mx-auto p-4 pt-8">
         {/* Kategori filtreleme */}
@@ -95,11 +95,14 @@ export default function Home() {
         >
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`px-6 py-2 rounded-full backdrop-blur-md transition-all duration-300 ${
+            className={`px-6 py-2 rounded-full transition-all duration-300 ${
               selectedCategory === 'all'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
-                : 'bg-white/10 hover:bg-white/20'
+                ? 'bg-blue-600 text-white shadow-[0_0_20px_-5px] shadow-blue-500/50 border border-blue-400/50'
+                : 'bg-gray-800 hover:bg-gray-700 border border-blue-500/20 hover:shadow-[0_0_15px_-5px] hover:shadow-blue-500/30'
             }`}
+            style={{
+              textShadow: selectedCategory === 'all' ? '0 0 10px rgba(59, 130, 246, 0.5)' : 'none'
+            }}
           >
             Tüm Yazılar
           </button>
@@ -107,11 +110,14 @@ export default function Home() {
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.name)}
-              className={`px-6 py-2 rounded-full backdrop-blur-md transition-all duration-300 ${
+              className={`px-6 py-2 rounded-full transition-all duration-300 ${
                 selectedCategory === category.name
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
-                  : 'bg-white/10 hover:bg-white/20'
+                  ? 'bg-blue-600 text-white shadow-[0_0_20px_-5px] shadow-blue-500/50 border border-blue-400/50'
+                  : 'bg-gray-800 hover:bg-gray-700 border border-blue-500/20 hover:shadow-[0_0_15px_-5px] hover:shadow-blue-500/30'
               }`}
+              style={{
+                textShadow: selectedCategory === category.name ? '0 0 10px rgba(59, 130, 246, 0.5)' : 'none'
+              }}
             >
               {category.name}
             </button>
@@ -131,7 +137,8 @@ export default function Home() {
               <motion.div key={category.id} variants={itemVariants}>
                 {postsByCategory[category.name]?.length > 0 && (
                   <div>
-                    <h2 className="text-3xl font-bold mb-8 pb-2 bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
+                    <h2 className="text-3xl font-bold mb-8 pb-2 text-white"
+                        style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)' }}>
                       {category.name}
                     </h2>
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -146,7 +153,8 @@ export default function Home() {
           ) : (
             // Seçili kategoriyi göster
             <motion.div variants={itemVariants}>
-              <h2 className="text-3xl font-bold mb-8 pb-2 bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
+              <h2 className="text-3xl font-bold mb-8 pb-2 text-white"
+                  style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)' }}>
                 {selectedCategory}
               </h2>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -171,31 +179,37 @@ function PostCard({ post }) {
       <motion.div 
         variants={itemVariants}
         onClick={() => setIsOpen(true)}
+        whileHover={{ scale: 1.02 }}
+        className="relative group"
       >
-        <div className="block rounded-xl overflow-hidden hover:transform hover:scale-[1.02] transition-all duration-300 cursor-pointer">
-          <article className="p-6 h-[320px] bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg border border-white/10 flex flex-col">
-            <h3 className="text-xl font-bold line-clamp-1 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent flex-1 mb-3">
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl opacity-20 group-hover:opacity-50 transition-opacity duration-500 blur"></div>
+        <div className="relative block rounded-xl overflow-hidden cursor-pointer">
+          <article className="p-6 h-[320px] bg-gray-800/80 backdrop-blur-sm border border-blue-500/20 group-hover:border-blue-500/40 transition-all duration-300 flex flex-col shadow-[0_0_30px_-15px] shadow-blue-500/20 group-hover:shadow-[0_0_30px_-10px] group-hover:shadow-blue-500/40">
+            <h3 className="text-xl font-bold line-clamp-1 text-white mb-3"
+                style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.3)' }}>
               {post.title}
             </h3>
 
-            <div className="text-sm text-gray-400 mb-2">
+            <div className="text-sm text-blue-300 mb-2">
               {new Date(post.createdAt).toLocaleDateString('tr-TR')}
             </div>
             
             <div className="prose prose-sm prose-invert max-w-none flex-1 overflow-hidden">
-              <div className="line-clamp-3 text-sm text-gray-300">
+              <div className="line-clamp-3 text-sm text-blue-100/80">
                 {post.blocks?.[0]?.content?.substring(0, 150) || ''}...
               </div>
             </div>
+
             {post.blocks?.[0]?.type === 'code' && (
-              <div className="text-xs text-blue-400 flex items-center mt-auto mb-2">
+              <div className="text-xs text-blue-400 flex items-center mt-auto mb-2"
+                   style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.3)' }}>
                 <span className="mr-2">⌨️</span>
-                <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                  Kod içerir
-                </span>
+                <span>Kod içerir</span>
               </div>
             )}
-            <div className="text-sm bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent font-medium">
+
+            <div className="text-sm text-blue-400 font-medium group-hover:text-blue-300 transition-colors"
+                 style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.3)' }}>
               Devamını Oku →
             </div>
           </article>

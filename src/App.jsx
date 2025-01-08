@@ -17,29 +17,44 @@ const App = () => {
 
   return (
     <Router>
-      <div className="bg-gray-950 min-h-screen text-white">
-        {/* Navbar */}
-        <Navbar 
-          onMenuClick={toggleSidebar} 
-          isSidebarOpen={isSidebarOpen}
-        />
+      <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.1),transparent_50%)] pointer-events-none"></div>
+        <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.1),transparent_50%)] pointer-events-none"></div>
+        
+        {/* Grid Pattern */}
+        <div 
+          className="fixed inset-0 opacity-20 pointer-events-none"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(59,130,246,0.1) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(59,130,246,0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px'
+          }}
+        ></div>
 
-        {/* Main Layout */}
-        <div className="flex">
-          {/* Sidebar */}
-          <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        {/* Content */}
+        <div className="relative">
+          <Navbar 
+            onMenuClick={toggleSidebar} 
+            isSidebarOpen={isSidebarOpen}
+          />
 
-          {/* Main Content */}
-          <main className="flex-1 ml-0 lg:ml-[280px] min-h-screen pt-16">
-            <div className="max-w-[100%] mx-auto p-4">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/admin" element={<AdminPanel />} />
-                <Route path="/blog/:id" element={<BlogPost />} />
-                <Route path="/category/:categoryName" element={<CategoryPage />} />
-              </Routes>
-            </div>
-          </main>
+          <div className="flex">
+            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+            <main className="flex-1 ml-0 lg:ml-[280px] min-h-screen pt-16">
+              <div className="max-w-[100%] mx-auto p-4">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/admin" element={<AdminPanel />} />
+                  <Route path="/blog/:id" element={<BlogPost />} />
+                  <Route path="/category/:categoryName" element={<CategoryPage />} />
+                </Routes>
+              </div>
+            </main>
+          </div>
         </div>
       </div>
     </Router>

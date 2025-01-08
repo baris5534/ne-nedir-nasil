@@ -62,7 +62,7 @@ export default function Sidebar({ isOpen, onClose }) {
         <>
             {/* Mobil Overlay */}
             <div 
-                className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 ${
+                className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${
                     isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
                 onClick={onClose}
@@ -70,23 +70,24 @@ export default function Sidebar({ isOpen, onClose }) {
 
             {/* Sidebar */}
             <div 
-                className={`fixed top-20 left-0 h-[calc(100vh-4rem)] w-[280px] bg-gray-900 border-r border-white/10 
+                className={`fixed top-16 left-0 h-[calc(100vh-4rem)] w-[280px] bg-gray-900/95 border-r border-blue-500/20 
                     transform transition-transform duration-300 ease-in-out z-50 overflow-y-auto
-                    lg:translate-x-0 lg:z-30 lg:fixed
+                    lg:translate-x-0 lg:z-30 lg:fixed shadow-[5px_0_30px_-15px] shadow-blue-500/20
                     ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
             >
                 <div className="h-full">
                     <div className="p-6">
                         {/* Header */}
                         <div className="flex justify-between items-center mb-8">
-                            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
+                            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent animate-neon-glow">
                                 Blog
                             </h1>
                             <button
                                 onClick={onClose}
-                                className="p-2 hover:bg-white/10 rounded-lg lg:hidden"
+                                className="p-2 hover:bg-blue-500/10 rounded-lg lg:hidden relative group"
                             >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
+                                <svg className="w-6 h-6 text-blue-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
@@ -96,26 +97,32 @@ export default function Sidebar({ isOpen, onClose }) {
                         <nav className="space-y-8">
                             {/* Ana Menü */}
                             <div>
-                                <h2 className="text-xs uppercase text-gray-400 font-medium mb-4">
+                                <h2 className="text-xs uppercase text-blue-400/80 font-medium mb-4 animate-neon-glow">
                                     Menü
                                 </h2>
                                 <ul className="space-y-2">
                                     <li>
                                         <Link
                                             to="/"
-                                            className="flex items-center px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
                                             onClick={onClose}
                                         >
-                                            Ana Sayfa
+                                            <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
+                                                Ana Sayfa
+                                            </span>
+                                            <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
                                         </Link>
                                     </li>
                                     <li>
                                         <Link
                                             to="/admin"
-                                            className="flex items-center px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
                                             onClick={onClose}
                                         >
-                                            Admin Panel
+                                            <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
+                                                Admin Panel
+                                            </span>
+                                            <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
                                         </Link>
                                     </li>
                                 </ul>
@@ -123,23 +130,26 @@ export default function Sidebar({ isOpen, onClose }) {
 
                             {/* Kategoriler */}
                             <div>
-                                <h2 className="text-xs uppercase text-gray-400 font-medium mb-4">
+                                <h2 className="text-xs uppercase text-blue-400/80 font-medium mb-4 animate-neon-glow">
                                     Kategoriler
                                 </h2>
                                 {loading ? (
-                                    <div className="text-sm text-gray-500">Yükleniyor...</div>
+                                    <div className="text-sm text-blue-300/50">Yükleniyor...</div>
                                 ) : (
                                     <ul className="space-y-1">
                                         {categories.map(category => (
                                             <li key={category.id}>
                                                 <button
                                                     onClick={() => toggleCategory(category.name)}
-                                                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+                                                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
                                                 >
-                                                    <span>{category.name}</span>
-                                                    <span className="text-xs text-gray-400">
+                                                    <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
+                                                        {category.name}
+                                                    </span>
+                                                    <span className="text-xs text-blue-400/60 group-hover:text-blue-400/80 transition-colors">
                                                         ({postsByCategory[category.name]?.length || 0})
                                                     </span>
+                                                    <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
                                                 </button>
 
                                                 {openCategories[category.name] && (
@@ -148,7 +158,7 @@ export default function Sidebar({ isOpen, onClose }) {
                                                             <li key={post.id}>
                                                                 <Link
                                                                     to={`/blog/${post.id}`}
-                                                                    className="block px-3 py-1 text-sm text-gray-400 hover:text-white transition-colors"
+                                                                    className="block px-3 py-1 text-sm text-blue-300/60 hover:text-blue-400 transition-colors"
                                                                     onClick={onClose}
                                                                 >
                                                                     {post.title}

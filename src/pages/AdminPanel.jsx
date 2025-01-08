@@ -5,9 +5,40 @@ import MDEditor from '@uiw/react-md-editor';
 import CategoryManager from '../components/CategoryManager';
 import CodeScreen from '../components/Codescreen';
 
+// Varsayılan dosya yapısı
+const defaultFileStructure = {
+  name: 'src',
+  type: 'folder',
+  children: [
+    {
+      name: 'app',
+      type: 'folder',
+      children: [
+        { name: 'layout.tsx', type: 'file' },
+        { name: 'page.tsx', type: 'file' }
+      ]
+    },
+    {
+      name: 'components',
+      type: 'folder',
+      children: [
+        {
+          name: 'ui',
+          type: 'folder',
+          children: [
+            { name: 'button.tsx', type: 'file' }
+          ]
+        },
+        { name: 'header.tsx', type: 'file' },
+        { name: 'footer.tsx', type: 'file' }
+      ]
+    }
+  ]
+};
+
 export default function AdminPanel() {
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24,6 +55,11 @@ export default function AdminPanel() {
   // Yazıları tutmak için yeni state
   const [posts, setPosts] = useState([]);
   const [editingPost, setEditingPost] = useState(null);
+
+  const [fileStructure, setFileStructure] = useState(defaultFileStructure);
+  const [editingNode, setEditingNode] = useState(null);
+  const [newNodeName, setNewNodeName] = useState('');
+  const [newNodeType, setNewNodeType] = useState('file');
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -63,19 +99,35 @@ export default function AdminPanel() {
       return;
     }
 
+    if (selectedCategories.length === 0) {
+      alert('En az bir kategori seçmelisiniz!');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const docRef = await addDoc(collection(db, 'posts'), {
+      // Kategori isimlerini bul
+      const selectedCategoryNames = selectedCategories.map(id => {
+        const category = categories.find(cat => cat.id === id);
+        return category?.name;
+      }).filter(Boolean);
+
+      const newPost = {
         title,
-        category: categories.find(cat => cat.id === category)?.name || category,
+        categories: selectedCategoryNames,
         blocks,
         createdAt: new Date().toISOString()
-      });
+      };
+
+      console.log('Yeni post:', newPost); // Debug için
+
+      await addDoc(collection(db, 'posts'), newPost);
+      await fetchPosts();
 
       setTitle('');
-      setCategory('');
+      setSelectedCategories([]);
       setBlocks([]);
       setCurrentBlock({
         type: 'text',
@@ -83,6 +135,7 @@ export default function AdminPanel() {
         code: '',
         codeTitle: 'Terminal'
       });
+
       alert('Yazı başarıyla eklendi!');
     } catch (error) {
       console.error('Hata:', error);
@@ -96,10 +149,15 @@ export default function AdminPanel() {
   const fetchPosts = useCallback(async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'posts'));
-      const postsData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const postsData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          // Eğer categories yoksa veya dizi değilse, boş dizi olarak ayarla
+          categories: Array.isArray(data.categories) ? data.categories : []
+        };
+      });
       setPosts(postsData);
     } catch (error) {
       console.error('Yazılar yüklenirken hata:', error);
@@ -126,9 +184,18 @@ export default function AdminPanel() {
 
   // Düzenleme moduna geç
   const startEditing = (post) => {
+    console.log('Düzenlenecek post:', post); // Debug için
+
     setEditingPost(post);
     setTitle(post.title);
-    setCategory(post.category);
+
+    // Kategori ID'lerini bul
+    const categoryIds = categories
+      .filter(cat => post.categories?.includes(cat.name))
+      .map(cat => cat.id);
+
+    console.log('Bulunan kategori ID\'leri:', categoryIds); // Debug için
+    setSelectedCategories(categoryIds);
     setBlocks(post.blocks || []);
   };
 
@@ -136,15 +203,22 @@ export default function AdminPanel() {
   const cancelEditing = () => {
     setEditingPost(null);
     setTitle('');
-    setCategory('');
+    setSelectedCategories([]);
     setBlocks([]);
   };
 
   // Yazı güncelleme
   const handleUpdate = async (e) => {
     e.preventDefault();
+    if (!editingPost) return;
+
     if (blocks.length === 0) {
       alert('En az bir içerik bloğu eklemelisiniz!');
+      return;
+    }
+
+    if (selectedCategories.length === 0) {
+      alert('En az bir kategori seçmelisiniz!');
       return;
     }
 
@@ -152,15 +226,24 @@ export default function AdminPanel() {
     setError(null);
 
     try {
-      await updateDoc(doc(db, 'posts', editingPost.id), {
+      // Kategori isimlerini bul
+      const selectedCategoryNames = selectedCategories.map(id => {
+        const category = categories.find(cat => cat.id === id);
+        return category?.name;
+      }).filter(Boolean);
+
+      const updatedPost = {
         title,
-        category,
+        categories: selectedCategoryNames,
         blocks,
         updatedAt: new Date().toISOString()
-      });
+      };
 
+      console.log('Güncellenecek post:', updatedPost); // Debug için
+
+      await updateDoc(doc(db, 'posts', editingPost.id), updatedPost);
+      await fetchPosts();
       alert('Yazı başarıyla güncellendi!');
-      fetchPosts();
       cancelEditing();
     } catch (error) {
       console.error('Güncelleme hatası:', error);
@@ -168,6 +251,124 @@ export default function AdminPanel() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Yeni düğüm ekleme
+  const addNode = (parentPath = []) => {
+    if (!newNodeName) return;
+
+    const newStructure = {...fileStructure};
+    let current = newStructure;
+
+    // Parent klasöre git
+    for (const index of parentPath) {
+      current = current.children[index];
+    }
+
+    // Yeni düğümü ekle
+    if (!current.children) current.children = [];
+    current.children.push({
+      name: newNodeName,
+      type: newNodeType,
+      children: newNodeType === 'folder' ? [] : undefined
+    });
+
+    setFileStructure(newStructure);
+    setNewNodeName('');
+  };
+
+  // Düğüm silme
+  const deleteNode = (path) => {
+    const newStructure = {...fileStructure};
+    let current = newStructure;
+    
+    // Son eleman hariç parent'a git
+    for (let i = 0; i < path.length - 1; i++) {
+      current = current.children[path[i]];
+    }
+
+    // Son elemanı sil
+    current.children.splice(path[path.length - 1], 1);
+    setFileStructure(newStructure);
+  };
+
+  // Ağaç yapısını recursive olarak render et
+  const renderTree = (node, path = []) => {
+    return (
+      <div key={node.name} className="ml-4">
+        <div className="flex items-center space-x-2 my-1">
+          <span>{node.type === 'folder' ? '📁' : '📄'}</span>
+          <span className="text-blue-300">{node.name}</span>
+          <button 
+            onClick={() => deleteNode(path)}
+            className="text-red-400 hover:text-red-300 text-sm"
+          >
+            Sil
+          </button>
+          {node.type === 'folder' && (
+            <button
+              onClick={() => setEditingNode(path)}
+              className="text-blue-400 hover:text-blue-300 text-sm"
+            >
+              Ekle
+            </button>
+          )}
+        </div>
+        {node.children?.map((child, index) => 
+          renderTree(child, [...path, index])
+        )}
+        {editingNode?.join(',') === path.join(',') && (
+          <div className="ml-8 mt-2 space-y-2">
+            <input
+              type="text"
+              value={newNodeName}
+              onChange={(e) => setNewNodeName(e.target.value)}
+              placeholder="Dosya/Klasör adı"
+              className="bg-gray-800 px-2 py-1 rounded text-sm"
+            />
+            <select
+              value={newNodeType}
+              onChange={(e) => setNewNodeType(e.target.value)}
+              className="bg-gray-800 px-2 py-1 rounded text-sm ml-2"
+            >
+              <option value="file">Dosya</option>
+              <option value="folder">Klasör</option>
+            </select>
+            <button
+              onClick={() => {
+                addNode(editingNode);
+                setEditingNode(null);
+              }}
+              className="bg-blue-500 px-2 py-1 rounded text-sm ml-2"
+            >
+              Ekle
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Kategori seçimi işleyicisi
+  const handleCategoryChange = (categoryId) => {
+    console.log('Kategori değiştiriliyor:', categoryId); // Debug için
+    console.log('Mevcut seçili kategoriler:', selectedCategories); // Debug için
+
+    setSelectedCategories(prev => {
+      let newCategories;
+      if (prev.includes(categoryId)) {
+        // Eğer zaten seçiliyse kaldır
+        newCategories = prev.filter(id => id !== categoryId);
+      } else if (prev.length < 2) {
+        // Eğer 2'den az seçili varsa ekle
+        newCategories = [...prev, categoryId];
+      } else {
+        // 2 seçili varsa ve yeni bir seçim yapılıyorsa, ilkini çıkar yenisini ekle
+        newCategories = [prev[1], categoryId];
+      }
+      console.log('Yeni kategori listesi:', newCategories); // Debug için
+      return newCategories;
+    });
   };
 
   return (
@@ -192,7 +393,10 @@ export default function AdminPanel() {
                 <div>
                   <h3 className="text-lg font-semibold">{post.title}</h3>
                   <p className="text-sm text-gray-400">
-                    Kategori: {post.category}
+                    Kategoriler: {post.categories?.length > 0 
+                      ? post.categories.join(', ') 
+                      : 'Kategorisiz'
+                    }
                     <span className="mx-2">•</span>
                     {new Date(post.createdAt).toLocaleDateString('tr-TR')}
                   </p>
@@ -235,24 +439,34 @@ export default function AdminPanel() {
         </div>
         
         <div>
-          <label className="block mb-2">Kategori:</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
-            required
-          >
-            <option value="">Kategori Seçin</option>
-            {categories.length === 0 ? (
-              <option disabled>Kategoriler yükleniyor...</option>
-            ) : (
-              categories.map(cat => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))
-            )}
-          </select>
+          <label className="block mb-2">
+            Kategoriler (En fazla 2) - Seçili: {selectedCategories.length}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => handleCategoryChange(cat.id)}
+                className={`px-3 py-1 rounded-full transition-all duration-300 ${
+                  selectedCategories.includes(cat.id)
+                    ? 'bg-blue-600 text-white shadow-[0_0_20px_-5px] shadow-blue-500/50'
+                    : 'bg-gray-800 hover:bg-gray-700'
+                }`}
+              >
+                {cat.name}
+                {selectedCategories.includes(cat.id) && (
+                  <span className="ml-2">✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+          {selectedCategories.length === 0 && (
+            <p className="text-red-400 text-sm mt-1">En az bir kategori seçmelisiniz</p>
+          )}
+          {selectedCategories.length === 2 && (
+            <p className="text-blue-400 text-sm mt-1">Maksimum kategori sayısına ulaştınız</p>
+          )}
         </div>
 
         <div className="mt-8">
@@ -376,6 +590,14 @@ export default function AdminPanel() {
           )}
         </div>
       </form>
+
+      {/* Dosya Yapısı Yönetimi */}
+      <div className="mt-8 bg-gray-800 p-4 rounded-lg">
+        <h2 className="text-xl font-bold mb-4">Dosya Yapısı Yönetimi</h2>
+        <div className="border border-gray-700 rounded p-4">
+          {renderTree(fileStructure)}
+        </div>
+      </div>
     </div>
   );
 } 
