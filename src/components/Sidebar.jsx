@@ -113,7 +113,7 @@ export default function Sidebar({ isOpen, onClose }) {
                                             <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
                                         </Link>
                                     </li>
-                                    <li>
+                                    {/* <li>
                                         <Link
                                             to="/admin"
                                             className="flex items-center px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
@@ -124,7 +124,7 @@ export default function Sidebar({ isOpen, onClose }) {
                                             </span>
                                             <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
                                         </Link>
-                                    </li>
+                                    </li> */}
                                 </ul>
                             </div>
 

@@ -48,7 +48,7 @@ const App = () => {
               <div className="max-w-[100%] mx-auto p-4">
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/admin" element={<AdminPanel />} />
+                  <Route path="/adminbeyegidelim" element={<AdminPanel />} />
                   <Route path="/blog/:id" element={<BlogPost />} />
                   <Route path="/category/:categoryName" element={<CategoryPage />} />
                 </Routes>
