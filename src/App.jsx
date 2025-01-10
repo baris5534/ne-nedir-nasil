@@ -55,17 +55,16 @@ const App = () => {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/admin-login" element={<AdminLogin />} />
-                    <Route 
-                      path="/adminbeyegidelim" 
-                      element={
-                        <AuthGuard>
-                          <AdminPanel />
-                        </AuthGuard>
-                      } 
-                    />
+                    <Route path="/admin" element={<AuthGuard><AdminPanel /></AuthGuard>} />
                     <Route path="/blog/:id" element={<BlogPost />} />
                     <Route path="/category/:categoryName" element={<CategoryPage />} />
                     <Route path="/search" element={<SearchPage />} />
+                    <Route path="*" element={
+                      <div className="text-center py-20">
+                        <h1 className="text-3xl font-bold text-blue-400 mb-4">Sayfa Bulunamadı</h1>
+                        <p className="text-blue-300">Aradığınız sayfa mevcut değil.</p>
+                      </div>
+                    } />
                   </Routes>
                 </div>
               </main>

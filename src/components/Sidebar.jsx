@@ -110,21 +110,23 @@ export default function Sidebar({ isOpen, onClose }) {
                                             <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
                                                 Ana Sayfa
                                             </span>
-                                            <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
                                         </Link>
                                     </li>
-                                    {/* <li>
-                                        <Link
-                                            to="/admin"
-                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
-                                            onClick={onClose}
-                                        >
-                                            <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
-                                                Admin Panel
-                                            </span>
-                                            <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
-                                        </Link>
-                                    </li> */}
+                                    {/* Admin linki için koşullu render */}
+                                    {sessionStorage.getItem('isAdminAuthenticated') === 'true' && (
+                                        <li>
+                                            <Link
+                                                to="/admin"
+                                                className="flex items-center px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
+                                                onClick={onClose}
+                                            >
+                                                <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
+                                                    Admin Panel
+                                                </span>
+                                                <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
+                                            </Link>
+                                        </li>
+                                    )}
                                 </ul>
                             </div>
 

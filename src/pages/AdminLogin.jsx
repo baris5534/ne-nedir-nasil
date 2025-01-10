@@ -13,7 +13,7 @@ export default function AdminLogin() {
   useEffect(() => {
     const isAuthenticated = sessionStorage.getItem('isAdminAuthenticated') === 'true';
     if (isAuthenticated) {
-      navigate('/adminbeyegidelim');
+      navigate('/admin');
     }
   }, [navigate]);
 
@@ -29,7 +29,7 @@ export default function AdminLogin() {
         sessionStorage.setItem('isAdminAuthenticated', 'true');
         
         // Eğer başka bir sayfadan yönlendirme varsa oraya git
-        const from = location.state?.from || '/adminbeyegidelim';
+        const from = location.state?.from || '/admin';
         navigate(from);
       } else {
         setError('Geçersiz şifre');

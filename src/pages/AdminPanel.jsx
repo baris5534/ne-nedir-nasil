@@ -4,6 +4,7 @@ import { db } from '../firebase/config';
 import MDEditor from '@uiw/react-md-editor';
 import CategoryManager from '../components/CategoryManager';
 import CodeScreen from '../components/Codescreen';
+import { useNavigate } from 'react-router-dom';
 
 // Varsayılan dosya yapısı
 const defaultFileStructure = {
@@ -37,6 +38,7 @@ const defaultFileStructure = {
 };
 
 export default function AdminPanel() {
+  const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -60,6 +62,13 @@ export default function AdminPanel() {
   const [editingNode, setEditingNode] = useState(null);
   const [newNodeName, setNewNodeName] = useState('');
   const [newNodeType, setNewNodeType] = useState('file');
+
+  useEffect(() => {
+    const isAuthenticated = sessionStorage.getItem('isAdminAuthenticated') === 'true';
+    if (!isAuthenticated) {
+      navigate('/admin-login');
+    }
+  }, [navigate]);
 
   const fetchCategories = useCallback(async () => {
     try {
