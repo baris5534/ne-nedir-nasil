@@ -151,9 +151,12 @@ export default function Sidebar({ isOpen, onClose }) {
                                                         onClick={() => toggleCategory(category.name)}
                                                         className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
                                                     >
-                                                        <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
-                                                            {category.name}
-                                                        </span>
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="text-lg">{category.icon}</span>
+                                                            <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
+                                                                {category.name}
+                                                            </span>
+                                                        </div>
                                                         <span className="text-xs text-blue-400/60 group-hover:text-blue-400/80 transition-colors">
                                                             ({postsByCategory[category.name]?.length || 0})
                                                         </span>

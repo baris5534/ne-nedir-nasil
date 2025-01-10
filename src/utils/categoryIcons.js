@@ -1,3 +1,5 @@
+import React from 'react';
+
 export const categoryIcons = {
   react: (
     <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">

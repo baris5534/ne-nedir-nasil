@@ -420,7 +420,7 @@ export default function AdminPanel() {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+            className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500"
             required
           />
         </div>

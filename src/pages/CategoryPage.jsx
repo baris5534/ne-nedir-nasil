@@ -5,11 +5,14 @@ import { db } from '../firebase/config';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
+import { CATEGORY_ICONS } from '../components/CategoryManager';
 
 export default function CategoryPage() {
     const { categoryName } = useParams();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [categories, setCategories] = useState([]);
+    const [currentCategory, setCurrentCategory] = useState(null);
 
     useEffect(() => {
         const fetchPosts = async () => {
@@ -35,6 +38,29 @@ export default function CategoryPage() {
         fetchPosts();
     }, [categoryName]);
 
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'categories'));
+                const categoriesData = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                console.log('CategoryPage - Categories:', categoriesData);
+                setCategories(categoriesData);
+                
+                // Mevcut kategoriyi bul
+                const current = categoriesData.find(cat => cat.name === categoryName);
+                console.log('Current Category:', current);
+                setCurrentCategory(current);
+            } catch (error) {
+                console.error('Kategoriler yüklenirken hata:', error);
+            }
+        };
+
+        fetchCategories();
+    }, [categoryName]);
+
     if (loading) return <div className="text-center">Yükleniyor...</div>;
 
     return (
@@ -49,9 +75,18 @@ export default function CategoryPage() {
             </Helmet>
             
             <div className="space-y-8">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
-                    {categoryName} Yazıları
-                </h1>
+                <div className="flex items-center justify-between">
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
+                        {categoryName} Yazıları
+                    </h1>
+                    {currentCategory && (
+                        <div className="text-blue-400 w-8 h-8">
+                            {console.log('Rendering icon for:', currentCategory.icon)}
+                            {console.log('Available icons:', Object.keys(CATEGORY_ICONS))}
+                            {CATEGORY_ICONS[currentCategory.icon] || CATEGORY_ICONS.default}
+                        </div>
+                    )}
+                </div>
 
                 {posts.length === 0 ? (
                     <div className="text-center text-gray-400">

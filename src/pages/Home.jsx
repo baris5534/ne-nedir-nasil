@@ -119,7 +119,11 @@ export default function Home() {
                   </h2>
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
                     {postsByCategory[category.name]?.map(post => (
-                      <PostCard key={post.id} post={post} />
+                      <PostCard 
+                        key={post.id} 
+                        post={post} 
+                        categories={categories}
+                      />
                     ))}
                   </div>
                 </div>
@@ -134,7 +138,11 @@ export default function Home() {
                   </h2>
                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {postsByCategory[selectedCategory].map(post => (
-                      <PostCard key={post.id} post={post} />
+                      <PostCard 
+                        key={post.id} 
+                        post={post} 
+                        categories={categories}
+                      />
                     ))}
                   </div>
                 </motion.div>
@@ -147,7 +155,7 @@ export default function Home() {
   );
 }
 
-function PostCard({ post }) {
+function PostCard({ post, categories }) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -162,10 +170,24 @@ function PostCard({ post }) {
         <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl opacity-20 group-hover:opacity-50 transition-opacity duration-500 blur"></div>
         <div className="relative block rounded-xl overflow-hidden cursor-pointer">
           <article className="p-6 h-[320px] bg-gray-800/80 backdrop-blur-sm border border-blue-500/20 group-hover:border-blue-500/40 transition-all duration-300 flex flex-col shadow-[0_0_30px_-15px] shadow-blue-500/20 group-hover:shadow-[0_0_30px_-10px] group-hover:shadow-blue-500/40">
-            <h3 className="text-xl font-bold line-clamp-1 text-white mb-3"
-                style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.3)' }}>
+            <h3 className="text-xl font-bold line-clamp-1 text-white mb-2">
               {post?.title || 'Untitled Post'}
             </h3>
+
+            <div className="flex items-center space-x-2 mb-3">
+              {post.categories?.map(categoryName => {
+                const category = categories.find(c => c.name === categoryName);
+                return category && (
+                  <div 
+                    key={category.name}
+                    className="flex items-center space-x-1 text-sm text-blue-300/80"
+                  >
+                    <span>{category.icon}</span>
+                    <span>{category.name}</span>
+                  </div>
+                );
+              })}
+            </div>
 
             <div className="text-sm text-blue-300 mb-2">
               {post?.createdAt ? new Date(post.createdAt).toLocaleDateString('tr-TR') : '-'}
