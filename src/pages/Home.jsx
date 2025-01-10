@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '../firebase/config';
 import ReactMarkdown from 'react-markdown';
 import CodeScreen from '../components/Codescreen';
+import { Helmet } from 'react-helmet-async';
 
 // Animasyon varyantları
 const containerVariants = {
@@ -81,92 +82,106 @@ export default function Home() {
   if (error) return <div className="text-red-500 text-center p-4">Hata: {error}</div>;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-gray-900"
-    >
-      <div className="max-w-[1200px] mx-auto p-4 pt-8">
-        {/* Kategori filtreleme */}
-        <motion.div 
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="mb-12 flex justify-center flex-wrap gap-3"
-        >
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`px-6 py-2 rounded-full transition-all duration-300 ${
-              selectedCategory === 'all'
-                ? 'bg-blue-600 text-white shadow-[0_0_20px_-5px] shadow-blue-500/50 border border-blue-400/50'
-                : 'bg-gray-800 hover:bg-gray-700 border border-blue-500/20 hover:shadow-[0_0_15px_-5px] hover:shadow-blue-500/30'
-            }`}
-            style={{
-              textShadow: selectedCategory === 'all' ? '0 0 10px rgba(59, 130, 246, 0.5)' : 'none'
-            }}
+    <>
+      <Helmet>
+        <title>Next.js Blog - Modern Web Teknolojileri</title>
+        <meta 
+          name="description" 
+          content="React, Next.js ve modern web teknolojileri hakkında güncel bilgiler, öğreticiler ve kod örnekleri." 
+        />
+        <meta 
+          name="keywords" 
+          content="react, nextjs, javascript, typescript, web development, frontend, backend, fullstack" 
+        />
+      </Helmet>
+      
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-gray-900"
+      >
+        <div className="max-w-[1200px] mx-auto p-4 pt-8">
+          {/* Kategori filtreleme */}
+          <motion.div 
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="mb-12 flex justify-center flex-wrap gap-3"
           >
-            Tüm Yazılar
-          </button>
-          {categories.map(category => (
             <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.name)}
+              onClick={() => setSelectedCategory('all')}
               className={`px-6 py-2 rounded-full transition-all duration-300 ${
-                selectedCategory === category.name
+                selectedCategory === 'all'
                   ? 'bg-blue-600 text-white shadow-[0_0_20px_-5px] shadow-blue-500/50 border border-blue-400/50'
                   : 'bg-gray-800 hover:bg-gray-700 border border-blue-500/20 hover:shadow-[0_0_15px_-5px] hover:shadow-blue-500/30'
               }`}
               style={{
-                textShadow: selectedCategory === category.name ? '0 0 10px rgba(59, 130, 246, 0.5)' : 'none'
+                textShadow: selectedCategory === 'all' ? '0 0 10px rgba(59, 130, 246, 0.5)' : 'none'
               }}
             >
-              {category.name}
+              Tüm Yazılar
             </button>
-          ))}
-        </motion.div>
+            {categories.map(category => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.name)}
+                className={`px-6 py-2 rounded-full transition-all duration-300 ${
+                  selectedCategory === category.name
+                    ? 'bg-blue-600 text-white shadow-[0_0_20px_-5px] shadow-blue-500/50 border border-blue-400/50'
+                    : 'bg-gray-800 hover:bg-gray-700 border border-blue-500/20 hover:shadow-[0_0_15px_-5px] hover:shadow-blue-500/30'
+                }`}
+                style={{
+                  textShadow: selectedCategory === category.name ? '0 0 10px rgba(59, 130, 246, 0.5)' : 'none'
+                }}
+              >
+                {category.name}
+              </button>
+            ))}
+          </motion.div>
 
-        {/* Yazılar */}
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="space-y-16"
-        >
-          {selectedCategory === 'all' ? (
-            // Tüm kategorileri göster
-            categories.map(category => (
-              <motion.div key={category.id} variants={itemVariants}>
-                {postsByCategory[category.name]?.length > 0 && (
-                  <div>
-                    <h2 className="text-3xl font-bold mb-8 pb-2 text-white"
-                        style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)' }}>
-                      {category.name}
-                    </h2>
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                      {postsByCategory[category.name].map(post => (
-                        <PostCard key={post.id} post={post} />
-                      ))}
+          {/* Yazılar */}
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="space-y-16"
+          >
+            {selectedCategory === 'all' ? (
+              // Tüm kategorileri göster
+              categories.map(category => (
+                <motion.div key={category.id} variants={itemVariants}>
+                  {postsByCategory[category.name]?.length > 0 && (
+                    <div>
+                      <h2 className="text-3xl font-bold mb-8 pb-2 text-white"
+                          style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)' }}>
+                        {category.name}
+                      </h2>
+                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {postsByCategory[category.name].map(post => (
+                          <PostCard key={post.id} post={post} />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </motion.div>
+              ))
+            ) : (
+              // Seçili kategoriyi göster
+              <motion.div variants={itemVariants}>
+                <h2 className="text-3xl font-bold mb-8 pb-2 text-white"
+                    style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)' }}>
+                  {selectedCategory}
+                </h2>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {postsByCategory[selectedCategory]?.map(post => (
+                    <PostCard key={post.id} post={post} />
+                  ))}
+                </div>
               </motion.div>
-            ))
-          ) : (
-            // Seçili kategoriyi göster
-            <motion.div variants={itemVariants}>
-              <h2 className="text-3xl font-bold mb-8 pb-2 text-white"
-                  style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)' }}>
-                {selectedCategory}
-              </h2>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {postsByCategory[selectedCategory]?.map(post => (
-                  <PostCard key={post.id} post={post} />
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </motion.div>
-      </div>
-    </motion.div>
+            )}
+          </motion.div>
+        </div>
+      </motion.div>
+    </>
   );
 }
 
