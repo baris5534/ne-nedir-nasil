@@ -31,7 +31,8 @@ export default function Sidebar({ isOpen, onClose }) {
                 const querySnapshot = await getDocs(q);
                 const postsData = querySnapshot.docs.map(doc => ({
                     id: doc.id,
-                    ...doc.data()
+                    ...doc.data(),
+                    categories: doc.data().categories || []
                 }));
                 setPosts(postsData);
             } catch (error) {
@@ -44,10 +45,13 @@ export default function Sidebar({ isOpen, onClose }) {
         fetchData();
     }, []);
 
-    const postsByCategory = posts.reduce((acc, post) => {
-        if (!post.category) return acc;
-        if (!acc[post.category]) acc[post.category] = [];
-        acc[post.category].push(post);
+    const postsByCategory = categories.reduce((acc, category) => {
+        const categoryPosts = posts.filter(post => 
+            post.categories?.includes(category.name)
+        );
+        if (categoryPosts.length > 0) {
+            acc[category.name] = categoryPosts;
+        }
         return acc;
     }, {});
 
@@ -110,6 +114,7 @@ export default function Sidebar({ isOpen, onClose }) {
                                             <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
                                                 Ana Sayfa
                                             </span>
+                                            <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
                                         </Link>
                                     </li>
                                     {/* Admin linki için koşullu render */}
@@ -140,36 +145,38 @@ export default function Sidebar({ isOpen, onClose }) {
                                 ) : (
                                     <ul className="space-y-1">
                                         {categories.map(category => (
-                                            <li key={category.id}>
-                                                <button
-                                                    onClick={() => toggleCategory(category.name)}
-                                                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
-                                                >
-                                                    <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
-                                                        {category.name}
-                                                    </span>
-                                                    <span className="text-xs text-blue-400/60 group-hover:text-blue-400/80 transition-colors">
-                                                        ({postsByCategory[category.name]?.length || 0})
-                                                    </span>
-                                                    <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
-                                                </button>
+                                            postsByCategory[category.name]?.length > 0 && (
+                                                <li key={category.id}>
+                                                    <button
+                                                        onClick={() => toggleCategory(category.name)}
+                                                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
+                                                    >
+                                                        <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
+                                                            {category.name}
+                                                        </span>
+                                                        <span className="text-xs text-blue-400/60 group-hover:text-blue-400/80 transition-colors">
+                                                            ({postsByCategory[category.name]?.length || 0})
+                                                        </span>
+                                                        <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
+                                                    </button>
 
-                                                {openCategories[category.name] && (
-                                                    <ul className="ml-4 mt-1 space-y-1">
-                                                        {postsByCategory[category.name]?.map(post => (
-                                                            <li key={post.id}>
-                                                                <Link
-                                                                    to={`/blog/${post.id}`}
-                                                                    className="block px-3 py-1 text-sm text-blue-300/60 hover:text-blue-400 transition-colors"
-                                                                    onClick={onClose}
-                                                                >
-                                                                    {post.title}
-                                                                </Link>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                )}
-                                            </li>
+                                                    {openCategories[category.name] && (
+                                                        <ul className="ml-4 mt-1 space-y-1">
+                                                            {postsByCategory[category.name]?.map(post => (
+                                                                <li key={post.id}>
+                                                                    <Link
+                                                                        to={`/blog/${post.id}`}
+                                                                        className="block px-3 py-1 text-sm text-blue-300/60 hover:text-blue-400 transition-colors"
+                                                                        onClick={onClose}
+                                                                    >
+                                                                        {post.title}
+                                                                    </Link>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    )}
+                                                </li>
+                                            )
                                         ))}
                                     </ul>
                                 )}

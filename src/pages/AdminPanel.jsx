@@ -114,41 +114,31 @@ export default function AdminPanel() {
     }
 
     setLoading(true);
-    setError(null);
-
     try {
-      // Kategori isimlerini bul
-      const selectedCategoryNames = selectedCategories.map(id => {
-        const category = categories.find(cat => cat.id === id);
-        return category?.name;
-      }).filter(Boolean);
-
-      const newPost = {
+      const postData = {
         title,
-        categories: selectedCategoryNames,
+        categories: selectedCategories,
         blocks,
-        createdAt: new Date().toISOString()
+        createdAt: editingPost ? editingPost.createdAt : new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
-      console.log('Yeni post:', newPost); // Debug için
+      if (editingPost) {
+        await updateDoc(doc(db, 'posts', editingPost.id), postData);
+        alert('Yazı güncellendi!');
+      } else {
+        await addDoc(collection(db, 'posts'), postData);
+        alert('Yazı yayınlandı!');
+      }
 
-      await addDoc(collection(db, 'posts'), newPost);
-      await fetchPosts();
-
+      // Formu sıfırla
       setTitle('');
       setSelectedCategories([]);
       setBlocks([]);
-      setCurrentBlock({
-        type: 'text',
-        content: '',
-        code: '',
-        codeTitle: 'Terminal'
-      });
-
-      alert('Yazı başarıyla eklendi!');
+      setEditingPost(null);
     } catch (error) {
-      console.error('Hata:', error);
-      setError(error.message);
+      console.error('Error:', error);
+      alert('Bir hata oluştu!');
     } finally {
       setLoading(false);
     }
@@ -193,19 +183,10 @@ export default function AdminPanel() {
 
   // Düzenleme moduna geç
   const startEditing = (post) => {
-    console.log('Düzenlenecek post:', post); // Debug için
-
     setEditingPost(post);
     setTitle(post.title);
-
-    // Kategori ID'lerini bul
-    const categoryIds = categories
-      .filter(cat => post.categories?.includes(cat.name))
-      .map(cat => cat.id);
-
-    console.log('Bulunan kategori ID\'leri:', categoryIds); // Debug için
-    setSelectedCategories(categoryIds);
     setBlocks(post.blocks || []);
+    setSelectedCategories(post.categories || []); // Mevcut kategorileri yükle
   };
 
   // Düzenlemeyi iptal et
@@ -232,31 +213,28 @@ export default function AdminPanel() {
     }
 
     setLoading(true);
-    setError(null);
-
     try {
-      // Kategori isimlerini bul
-      const selectedCategoryNames = selectedCategories.map(id => {
-        const category = categories.find(cat => cat.id === id);
-        return category?.name;
-      }).filter(Boolean);
-
-      const updatedPost = {
+      const postData = {
         title,
-        categories: selectedCategoryNames,
+        categories: selectedCategories,
         blocks,
         updatedAt: new Date().toISOString()
       };
 
-      console.log('Güncellenecek post:', updatedPost); // Debug için
-
-      await updateDoc(doc(db, 'posts', editingPost.id), updatedPost);
-      await fetchPosts();
-      alert('Yazı başarıyla güncellendi!');
-      cancelEditing();
+      await updateDoc(doc(db, 'posts', editingPost.id), postData);
+      alert('Yazı güncellendi!');
+      
+      // Formu sıfırla
+      setTitle('');
+      setSelectedCategories([]);
+      setBlocks([]);
+      setEditingPost(null);
+      
+      // Yazıları yeniden yükle
+      fetchPosts();
     } catch (error) {
-      console.error('Güncelleme hatası:', error);
-      setError(error.message);
+      console.error('Error:', error);
+      alert('Güncelleme sırasında bir hata oluştu!');
     } finally {
       setLoading(false);
     }
@@ -447,35 +425,40 @@ export default function AdminPanel() {
           />
         </div>
         
-        <div>
-          <label className="block mb-2">
-            Kategoriler (En fazla 2) - Seçili: {selectedCategories.length}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-blue-400/80 mb-2">
+            Kategoriler
           </label>
           <div className="flex flex-wrap gap-2">
-            {categories.map(cat => (
+            {categories.map(category => (
               <button
-                key={cat.id}
+                key={category.id}
                 type="button"
-                onClick={() => handleCategoryChange(cat.id)}
-                className={`px-3 py-1 rounded-full transition-all duration-300 ${
-                  selectedCategories.includes(cat.id)
-                    ? 'bg-blue-600 text-white shadow-[0_0_20px_-5px] shadow-blue-500/50'
-                    : 'bg-gray-800 hover:bg-gray-700'
+                onClick={() => {
+                  setSelectedCategories(prev => {
+                    if (prev.includes(category.name)) {
+                      return prev.filter(cat => cat !== category.name);
+                    } else {
+                      return [...prev, category.name];
+                    }
+                  });
+                }}
+                className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                  selectedCategories.includes(category.name)
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-700 text-blue-300 hover:bg-gray-600'
                 }`}
               >
-                {cat.name}
-                {selectedCategories.includes(cat.id) && (
+                {category.name}
+                {selectedCategories.includes(category.name) && (
                   <span className="ml-2">✓</span>
                 )}
               </button>
             ))}
           </div>
-          {selectedCategories.length === 0 && (
-            <p className="text-red-400 text-sm mt-1">En az bir kategori seçmelisiniz</p>
-          )}
-          {selectedCategories.length === 2 && (
-            <p className="text-blue-400 text-sm mt-1">Maksimum kategori sayısına ulaştınız</p>
-          )}
+          <p className="text-sm text-blue-400/60 mt-1">
+            Seçili kategoriler: {selectedCategories.join(', ') || 'Yok'}
+          </p>
         </div>
 
         <div className="mt-8">

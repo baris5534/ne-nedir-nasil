@@ -16,7 +16,7 @@ export default function CategoryPage() {
             try {
                 const q = query(
                     collection(db, 'posts'),
-                    where('category', '==', categoryName),
+                    where('categories', 'array-contains', categoryName),
                     orderBy('createdAt', 'desc')
                 );
                 const querySnapshot = await getDocs(q);

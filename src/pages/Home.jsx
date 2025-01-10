@@ -46,15 +46,11 @@ export default function Home() {
         const postSnapshot = await getDocs(
           query(collection(db, 'posts'), orderBy('createdAt', 'desc'))
         );
-        const postData = postSnapshot.docs.map(doc => {
-          const data = doc.data();
-          const category = categoryData.find(cat => cat.name === data.category);
-          return {
-            id: doc.id,
-            ...data,
-            categoryData: category
-          };
-        });
+        const postData = postSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          categories: doc.data().categories || [] // Kategorileri diziye çevir
+        }));
         setPosts(postData);
       } catch (error) {
         console.error('Veri yüklenirken hata:', error);
@@ -67,16 +63,23 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // Yazıları kategorilere göre grupla
-  const postsByCategory = posts.reduce((acc, post) => {
-    if (post.category) {
-      if (!acc[post.category]) {
-        acc[post.category] = [];
-      }
-      acc[post.category].push(post);
+  // Yazıları kategorilere göre grupla ve boş kategorileri filtrele
+  const postsByCategory = categories.reduce((acc, category) => {
+    const categoryPosts = posts.filter(post => 
+      post.categories?.includes(category.name)
+    );
+    
+    // Sadece yazı olan kategorileri ekle
+    if (categoryPosts.length > 0) {
+      acc[category.name] = categoryPosts;
     }
     return acc;
   }, {});
+
+  // Yazı olan kategorileri bul
+  const activeCategories = categories.filter(category => 
+    postsByCategory[category.name]?.length > 0
+  );
 
   if (loading) return <div className="text-center p-4">Yükleniyor...</div>;
   if (error) return <div className="text-red-500 text-center p-4">Hata: {error}</div>;
@@ -101,44 +104,6 @@ export default function Home() {
         className="min-h-screen bg-gray-900"
       >
         <div className="max-w-[1200px] mx-auto p-4 pt-8">
-          {/* Kategori filtreleme */}
-          <motion.div 
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="mb-12 flex justify-center flex-wrap gap-3"
-          >
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-6 py-2 rounded-full transition-all duration-300 ${
-                selectedCategory === 'all'
-                  ? 'bg-blue-600 text-white shadow-[0_0_20px_-5px] shadow-blue-500/50 border border-blue-400/50'
-                  : 'bg-gray-800 hover:bg-gray-700 border border-blue-500/20 hover:shadow-[0_0_15px_-5px] hover:shadow-blue-500/30'
-              }`}
-              style={{
-                textShadow: selectedCategory === 'all' ? '0 0 10px rgba(59, 130, 246, 0.5)' : 'none'
-              }}
-            >
-              Tüm Yazılar
-            </button>
-            {categories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.name)}
-                className={`px-6 py-2 rounded-full transition-all duration-300 ${
-                  selectedCategory === category.name
-                    ? 'bg-blue-600 text-white shadow-[0_0_20px_-5px] shadow-blue-500/50 border border-blue-400/50'
-                    : 'bg-gray-800 hover:bg-gray-700 border border-blue-500/20 hover:shadow-[0_0_15px_-5px] hover:shadow-blue-500/30'
-                }`}
-                style={{
-                  textShadow: selectedCategory === category.name ? '0 0 10px rgba(59, 130, 246, 0.5)' : 'none'
-                }}
-              >
-                {category.name}
-              </button>
-            ))}
-          </motion.div>
-
-          {/* Yazılar */}
           <motion.div 
             variants={containerVariants}
             initial="hidden"
@@ -146,37 +111,34 @@ export default function Home() {
             className="space-y-16"
           >
             {selectedCategory === 'all' ? (
-              // Tüm kategorileri göster
-              categories.map(category => (
-                <motion.div key={category.id} variants={itemVariants}>
-                  {postsByCategory[category.name]?.length > 0 && (
-                    <div>
-                      <h2 className="text-3xl font-bold mb-8 pb-2 text-white"
-                          style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)' }}>
-                        {category.name}
-                      </h2>
-                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {postsByCategory[category.name].map(post => (
-                          <PostCard key={post.id} post={post} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
+              // Sadece yazı olan kategorileri göster
+              activeCategories.map(category => (
+                <div key={category.id}>
+                  <h2 className="text-xl font-bold mb-4">
+                    {category.name}
+                  </h2>
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+                    {postsByCategory[category.name]?.map(post => (
+                      <PostCard key={post.id} post={post} />
+                    ))}
+                  </div>
+                </div>
               ))
             ) : (
               // Seçili kategoriyi göster
-              <motion.div variants={itemVariants}>
-                <h2 className="text-3xl font-bold mb-8 pb-2 text-white"
-                    style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)' }}>
-                  {selectedCategory}
-                </h2>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {postsByCategory[selectedCategory]?.map(post => (
-                    <PostCard key={post.id} post={post} />
-                  ))}
-                </div>
-              </motion.div>
+              postsByCategory[selectedCategory] && (
+                <motion.div variants={itemVariants}>
+                  <h2 className="text-3xl font-bold mb-8 pb-2 text-white"
+                      style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)' }}>
+                    {selectedCategory}
+                  </h2>
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {postsByCategory[selectedCategory].map(post => (
+                      <PostCard key={post.id} post={post} />
+                    ))}
+                  </div>
+                </motion.div>
+              )
             )}
           </motion.div>
         </div>
@@ -202,11 +164,11 @@ function PostCard({ post }) {
           <article className="p-6 h-[320px] bg-gray-800/80 backdrop-blur-sm border border-blue-500/20 group-hover:border-blue-500/40 transition-all duration-300 flex flex-col shadow-[0_0_30px_-15px] shadow-blue-500/20 group-hover:shadow-[0_0_30px_-10px] group-hover:shadow-blue-500/40">
             <h3 className="text-xl font-bold line-clamp-1 text-white mb-3"
                 style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.3)' }}>
-              {post.title}
+              {post?.title || 'Untitled Post'}
             </h3>
 
             <div className="text-sm text-blue-300 mb-2">
-              {new Date(post.createdAt).toLocaleDateString('tr-TR')}
+              {post?.createdAt ? new Date(post.createdAt).toLocaleDateString('tr-TR') : '-'}
             </div>
             
             <div className="prose prose-sm prose-invert max-w-none flex-1 overflow-hidden">
