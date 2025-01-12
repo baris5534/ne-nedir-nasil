@@ -12,7 +12,8 @@ export default {
         'neon-glow': 'neon-glow 2s ease-in-out infinite',
         'neon-border': 'neon-border 2s ease-in-out infinite',
         'float': 'float 3s ease-in-out infinite',
-        'shimmer': 'shimmer 3s infinite'
+        'shimmer': 'shimmer 3s infinite',
+        pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
         gradient: {
@@ -64,7 +65,11 @@ export default {
         shimmer: {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(100%)' }
-        }
+        },
+        pulse: {
+          '0%, 100%': { opacity: 1 },
+          '50%': { opacity: .5 },
+        },
       },
       boxShadow: {
         'neon-sm': '0 0 5px rgba(59,130,246,0.3), 0 0 10px rgba(59,130,246,0.2)',

@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CATEGORY_ICONS } from '../utils/categoryIcons.jsx';
+
 
 export default function Sidebar({ isOpen, onClose }) {
     const [posts, setPosts] = useState([]);
@@ -152,7 +154,9 @@ export default function Sidebar({ isOpen, onClose }) {
                                                         className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
                                                     >
                                                         <div className="flex items-center space-x-2">
-                                                            <span className="text-lg">{category.icon}</span>
+                                                        <span className="w-6 h-6">
+                            {CATEGORY_ICONS[category.icon] || CATEGORY_ICONS.default}
+                        </span>
                                                             <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
                                                                 {category.name}
                                                             </span>

@@ -5,7 +5,31 @@ import { db } from '../firebase/config';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { CATEGORY_ICONS } from '../components/CategoryManager';
+import { CategoryIcon } from '../components/icons/CategoryIcons';
+
+const CategoryPageSkeleton = () => (
+  <div className="animate-pulse max-w-4xl mx-auto p-4">
+    {/* Başlık Skeleton */}
+    <div className="h-12 bg-blue-400/20 rounded-lg w-1/2 mb-8" />
+    
+    {/* İçerik Grid */}
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {[1, 2, 3, 4, 5, 6].map(i => (
+        <div key={i} className="relative">
+          <div className="absolute -inset-0.5 bg-blue-500/20 rounded-xl blur"></div>
+          <div className="relative p-6 bg-gray-800/80 rounded-xl border border-blue-500/20">
+            <div className="h-7 bg-blue-400/20 rounded-lg w-3/4 mb-4" />
+            <div className="space-y-2">
+              <div className="h-4 bg-blue-400/20 rounded w-full" />
+              <div className="h-4 bg-blue-400/20 rounded w-5/6" />
+              <div className="h-4 bg-blue-400/20 rounded w-4/6" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 export default function CategoryPage() {
     const { categoryName } = useParams();
@@ -61,7 +85,7 @@ export default function CategoryPage() {
         fetchCategories();
     }, [categoryName]);
 
-    if (loading) return <div className="text-center">Yükleniyor...</div>;
+    if (loading) return <CategoryPageSkeleton />;
 
     return (
         <>
@@ -74,54 +98,41 @@ export default function CategoryPage() {
                 <meta name="keywords" content={`${categoryName}, react, nextjs, javascript, web development`} />
             </Helmet>
             
-            <div className="space-y-8">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
-                        {categoryName} Yazıları
-                    </h1>
-                    {currentCategory && (
-                        <div className="text-blue-400 w-8 h-8">
-                            {console.log('Rendering icon for:', currentCategory.icon)}
-                            {console.log('Available icons:', Object.keys(CATEGORY_ICONS))}
-                            {CATEGORY_ICONS[currentCategory.icon] || CATEGORY_ICONS.default}
-                        </div>
-                    )}
+            <div className="max-w-4xl mx-auto p-4">
+                <div className="flex items-center space-x-3 mb-8">
+                    <CategoryIcon 
+                        name={categoryName} 
+                        className="w-8 h-8"
+                    />
+                    <h1 className="text-3xl font-bold">{categoryName} Yazıları</h1>
                 </div>
 
-                {posts.length === 0 ? (
-                    <div className="text-center text-gray-400">
-                        Bu kategoride henüz yazı bulunmuyor.
-                    </div>
-                ) : (
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {posts.map(post => (
-                            <motion.div
-                                key={post.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.3 }}
-                            >
-                                <Link
-                                    to={`/blog/${post.id}`}
-                                    className="block p-6 bg-gray-800/50 rounded-lg hover:bg-gray-800/70 transition-all duration-300"
-                                >
-                                    <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
-                                    <div className="text-sm text-gray-400 mb-4">
-                                        {new Date(post.createdAt).toLocaleDateString('tr-TR')}
-                                    </div>
-                                    <div className="text-gray-300 text-sm line-clamp-3">
-                                        <ReactMarkdown>
-                                            {post.blocks?.[0]?.content || ''}
-                                        </ReactMarkdown>
-                                    </div>
-                                    <div className="mt-4 text-blue-400 text-sm">
-                                        Devamını Oku →
-                                    </div>
-                                </Link>
-                            </motion.div>
-                        ))}
-                    </div>
-                )}
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {posts.map(post => (
+                        <Link
+                            key={post.id}
+                            to={`/blog/${post.id}`}
+                            className="block group"
+                        >
+                            <div className="p-6 bg-gray-800 rounded-xl hover:bg-gray-700/50 transition">
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <CategoryIcon 
+                                        name={categoryName} 
+                                        className="w-5 h-5 text-blue-400"
+                                    />
+                                    <h2 className="text-xl font-semibold group-hover:text-blue-400 transition">
+                                        {post.title}
+                                    </h2>
+                                </div>
+                                
+                                {/* Post içeriği */}
+                                <div className="text-gray-400">
+                                    {post.blocks?.[0]?.content?.slice(0, 100)}...
+                                </div>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
             </div>
         </>
     );

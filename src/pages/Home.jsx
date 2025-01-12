@@ -6,6 +6,7 @@ import { db } from '../firebase/config';
 import ReactMarkdown from 'react-markdown';
 import CodeScreen from '../components/Codescreen';
 import { Helmet } from 'react-helmet-async';
+import PostModal from '../components/PostModal';
 
 // Animasyon varyantları
 const containerVariants = {
@@ -22,6 +23,51 @@ const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   show: { y: 0, opacity: 1 }
 };
+
+// Skeleton bileşenleri
+const PostCardSkeleton = () => (
+  <div className="animate-pulse">
+    <div className="relative">
+      <div className="absolute -inset-0.5 bg-blue-500/20 rounded-xl blur"></div>
+      <div className="relative block rounded-xl overflow-hidden">
+        <div className="p-6 h-[320px] bg-gray-800/80 border border-blue-500/20 flex flex-col">
+          {/* Başlık Skeleton */}
+          <div className="h-7 bg-blue-400/20 rounded-lg w-3/4 mb-2" />
+
+          {/* Kategori Skeleton */}
+          <div className="flex items-center space-x-2 mb-3">
+            <div className="h-5 w-5 bg-blue-400/20 rounded" />
+            <div className="h-5 w-20 bg-blue-400/20 rounded" />
+          </div>
+
+          {/* Tarih Skeleton */}
+          <div className="h-4 bg-blue-400/20 rounded w-24 mb-2" />
+          
+          {/* İçerik Skeleton */}
+          <div className="space-y-2 flex-1">
+            <div className="h-4 bg-blue-400/20 rounded w-full" />
+            <div className="h-4 bg-blue-400/20 rounded w-5/6" />
+            <div className="h-4 bg-blue-400/20 rounded w-4/6" />
+          </div>
+
+          {/* Alt Kısım Skeleton */}
+          <div className="h-4 bg-blue-400/20 rounded w-28 mt-auto" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const CategorySkeleton = () => (
+  <div className="animate-pulse">
+    <div className="h-8 bg-blue-400/20 rounded-lg w-48 mb-4" />
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+      {[1, 2, 3].map(i => (
+        <PostCardSkeleton key={i} />
+      ))}
+    </div>
+  </div>
+);
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -81,7 +127,24 @@ export default function Home() {
     postsByCategory[category.name]?.length > 0
   );
 
-  if (loading) return <div className="text-center p-4">Yükleniyor...</div>;
+  if (loading) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-gray-900"
+      >
+        <div className="max-w-[1200px] mx-auto p-4 pt-8">
+          <div className="space-y-16">
+            {[1, 2, 3].map(i => (
+              <CategorySkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   if (error) return <div className="text-red-500 text-center p-4">Hata: {error}</div>;
 
   return (
@@ -98,10 +161,24 @@ export default function Home() {
         />
       </Helmet>
       
+      {/* Spotlight Efekti */}
+      <div 
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(
+              45deg,
+              rgba(59, 130, 246, 0.15),
+              transparent 40%
+            )
+          `,
+        }}
+      />
+
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen bg-gray-900"
+        className="min-h-screen bg-transparent relative"
       >
         <div className="max-w-[1200px] mx-auto p-4 pt-8">
           <motion.div 
@@ -123,6 +200,7 @@ export default function Home() {
                         key={post.id} 
                         post={post} 
                         categories={categories}
+                        categoryPosts={postsByCategory[category.name]}
                       />
                     ))}
                   </div>
@@ -142,6 +220,7 @@ export default function Home() {
                         key={post.id} 
                         post={post} 
                         categories={categories}
+                        categoryPosts={postsByCategory[selectedCategory]}
                       />
                     ))}
                   </div>
@@ -155,9 +234,14 @@ export default function Home() {
   );
 }
 
-function PostCard({ post, categories }) {
+function PostCard({ post, categories, categoryPosts }) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Mevcut postun kategorideki index'ini bul
+  const currentIndex = categoryPosts.findIndex(p => p.id === post.id);
+  const previousPost = currentIndex > 0 ? categoryPosts[currentIndex - 1] : null;
+  const nextPost = currentIndex < categoryPosts.length - 1 ? categoryPosts[currentIndex + 1] : null;
 
   return (
     <>
@@ -215,69 +299,12 @@ function PostCard({ post, categories }) {
         </div>
       </motion.div>
 
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.75, y: 100 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.75, y: 100 }}
-              transition={{ type: "spring", duration: 0.5 }}
-              className="fixed inset-4 top-20 z-50 overflow-y-auto rounded-xl bg-gray-900/95 border border-white/10"
-            >
-              <div className="p-6 max-w-4xl mx-auto">
-                <h1 className="text-2xl sm:text-3xl font-bold mb-4 bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
-                  {post.title}
-                </h1>
-
-                <div className="text-sm text-gray-400 mb-6">
-                  {post.category && (
-                    <>
-                      Kategori: {post.category}
-                      <span className="mx-2">•</span>
-                    </>
-                  )}
-                  {post.createdAt && (
-                    <>{new Date(post.createdAt).toLocaleDateString('tr-TR')}</>
-                  )}
-                </div>
-
-                <div className="space-y-6">
-                  {post.blocks?.map((block, index) => (
-                    <div key={index} className="overflow-x-auto">
-                      {block.type === 'text' ? (
-                        <div className="prose prose-invert max-w-none">
-                          <ReactMarkdown>{block.content}</ReactMarkdown>
-                        </div>
-                      ) : (
-                        <div className="rounded-lg overflow-hidden">
-                          <CodeScreen code={block.code} title={block.codeTitle} />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="fixed top-4 right-4 p-2 rounded-full bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <PostModal 
+        post={post} 
+        isOpen={isOpen} 
+        onClose={() => setIsOpen(false)}
+        categoryPosts={categoryPosts}
+      />
     </>
   );
 }

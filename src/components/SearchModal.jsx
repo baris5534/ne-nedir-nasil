@@ -3,10 +3,28 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import SearchAutocomplete from './SearchAutocomplete';
 
+const SearchResultSkeleton = () => (
+  <div className="animate-pulse space-y-4">
+    {[1, 2, 3].map((i) => (
+      <div key={i} className="flex items-start space-x-3 p-3">
+        <div className="h-6 w-6 bg-blue-400/20 rounded mt-1" />
+        <div className="flex-1 space-y-2">
+          <div className="h-6 bg-blue-400/20 rounded w-3/4" />
+          <div className="space-y-1">
+            <div className="h-4 bg-blue-400/20 rounded w-full" />
+            <div className="h-4 bg-blue-400/20 rounded w-5/6" />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 export default function SearchModal({ isOpen, onClose, posts }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(true);
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -38,17 +56,19 @@ export default function SearchModal({ isOpen, onClose, posts }) {
             className="fixed top-4 left-4 right-4 z-50"
           >
             <form onSubmit={handleSearch} className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Yazılarda ara..."
-                autoFocus
-                className="w-full px-4 py-3 bg-gray-800/95 border border-blue-500/30 rounded-lg 
-                         focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20
-                         text-blue-100 placeholder-blue-400/50 transition-all duration-300
-                         shadow-lg shadow-blue-500/20"
-              />
+              <div className="sticky top-0 bg-gray-900/95 p-4 border-b border-blue-500/20">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Yazılarda ara..."
+                  autoFocus
+                  className="w-full px-4 py-3 bg-gray-800/95 border border-blue-500/30 rounded-lg 
+                           focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20
+                           text-blue-100 placeholder-blue-400/50 transition-all duration-300
+                           shadow-lg shadow-blue-500/20"
+                />
+              </div>
               <button
                 type="submit"
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-blue-400/60 

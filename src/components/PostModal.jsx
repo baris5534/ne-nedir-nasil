@@ -2,47 +2,75 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import CodeScreen from './Codescreen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-export default function PostModal({ post, isOpen, onClose }) {
+// Skeleton bileşeni
+const Skeleton = () => (
+  <div className="animate-pulse space-y-6">
+    {/* Başlık Skeleton */}
+    <div className="h-10 bg-blue-400/20 rounded-lg w-3/4" />
+    
+    {/* Meta Bilgiler Skeleton */}
+    <div className="flex space-x-2">
+      <div className="h-4 bg-blue-400/20 rounded w-20" />
+      <div className="h-4 bg-blue-400/20 rounded w-20" />
+      <div className="h-4 bg-blue-400/20 rounded w-32" />
+    </div>
+    
+    {/* İçerik Blokları Skeleton */}
+    <div className="space-y-4">
+      <div className="h-24 bg-blue-400/20 rounded-lg" />
+      <div className="h-32 bg-blue-400/20 rounded-lg" />
+      <div className="h-48 bg-blue-400/20 rounded-lg" />
+    </div>
+  </div>
+);
+
+export default function PostModal({ post, isOpen, onClose, categoryPosts }) {
   const navigate = useNavigate();
+  const [currentPost, setCurrentPost] = useState(post);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // ===== Scroll Kontrolü =====
+  // Post değiştiğinde current post'u güncelle
+  useEffect(() => {
+    setCurrentPost(post);
+  }, [post]);
+
+  // Mevcut postun kategorideki index'ini bul
+  const currentIndex = categoryPosts?.findIndex(p => p.id === currentPost.id);
+  const previousPost = currentIndex > 0 ? categoryPosts[currentIndex - 1] : null;
+  const nextPost = currentIndex < categoryPosts.length - 1 ? categoryPosts[currentIndex + 1] : null;
+
+  // Post değiştirme fonksiyonu
+  const changePost = async (newPost) => {
+    setIsTransitioning(true);
+    setIsLoading(true);
+    navigate(`/blog/${newPost.id}`, { replace: true });
+    setCurrentPost(newPost);
+    setTimeout(() => {
+      setIsTransitioning(false);
+      setIsLoading(false);
+    }, 500);
+  };
+
+  // Scroll kontrolü
   useEffect(() => {
     if (isOpen) {
-      // Scroll'u devre dışı bırak
       document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      document.body.style.top = `-${window.scrollY}px`;
     } else {
-      // Scroll'u geri aç
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.top = '';
       document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
-      window.scrollTo(0, parseInt(scrollY || '0') * -1);
     }
-
-    // Cleanup fonksiyonu
     return () => {
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.top = '';
       document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     };
   }, [isOpen]);
 
-  // ===== Modal Render =====
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* ----- Arkaplan Overlay ----- */}
+          {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -54,7 +82,7 @@ export default function PostModal({ post, isOpen, onClose }) {
             className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50"
           />
 
-          {/* ----- Modal Container ----- */}
+          {/* Modal Container */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -69,21 +97,60 @@ export default function PostModal({ post, isOpen, onClose }) {
               `
             }}
           >
-            {/* ----- Kaydırılabilir İçerik Alanı ----- */}
-            <div className="flex-1 overflow-y-auto">
-              {/* ----- Efekt Katmanı ----- */}
+            {/* Kaydırılabilir İçerik Alanı */}
+            <div className="flex-1 overflow-y-auto relative">
+              {/* Navigasyon Butonları */}
+              <div className="fixed left-8 right-8 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-10">
+                {previousPost && (
+                  <div className="flex items-center space-x-2 pointer-events-auto">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        changePost(previousPost);
+                      }}
+                      className="p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors group flex items-center space-x-2"
+                    >
+                      <svg className="w-5 h-5 transform rotate-180 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                      <div className="text-sm">
+                        <div className="text-blue-400/60 font-medium">Önceki Yazı</div>
+                        <div className="text-blue-300 line-clamp-1 max-w-[200px]">{previousPost.title}</div>
+                      </div>
+                    </button>
+                  </div>
+                )}
+                
+                {nextPost && (
+                  <div className="flex items-center space-x-2 pointer-events-auto">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        changePost(nextPost);
+                      }}
+                      className="p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors group flex items-center space-x-2"
+                    >
+                      <div className="text-sm text-right">
+                        <div className="text-blue-400/60 font-medium">Sonraki Yazı</div>
+                        <div className="text-blue-300 line-clamp-1 max-w-[200px]">{nextPost.title}</div>
+                      </div>
+                      <svg className="w-5 h-5 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Efekt Katmanı */}
               <div className="absolute inset-0 pointer-events-none">
-                {/* Üst Gradient */}
+                {/* Gradientler */}
                 <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-blue-500/20 to-transparent" />
-
-                {/* Alt Gradient */}
                 <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-blue-500/20 to-transparent" />
-
-                {/* Yan Gradientler */}
                 <div className="absolute top-0 bottom-0 left-0 w-32 bg-gradient-to-r from-blue-500/20 to-transparent" />
                 <div className="absolute top-0 bottom-0 right-0 w-32 bg-gradient-to-l from-blue-500/20 to-transparent" />
 
-                {/* Yanıp Sönen Kenarlık Efekti */}
+                {/* Yanıp Sönen Kenarlık */}
                 <div className="absolute inset-0 rounded-xl overflow-hidden">
                   <div 
                     className="absolute inset-0 opacity-50"
@@ -96,80 +163,70 @@ export default function PostModal({ post, isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* ----- Ana İçerik ----- */}
-              <div className="relative p-6 max-w-4xl mx-auto">
-                {/* Başlık */}
-                <h1 
-                  className="text-2xl sm:text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-blue-300 to-blue-400"
-                  style={{
-                    textShadow: `
-                      0 0 20px rgba(59, 130, 246, 0.8),
-                      0 0 40px rgba(59, 130, 246, 0.6),
-                      0 0 60px rgba(59, 130, 246, 0.4)
-                    `
-                  }}
+              {/* Ana İçerik */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentPost.id}
+                  initial={{ opacity: 0, x: isTransitioning ? 100 : 0 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: isTransitioning ? -100 : 0 }}
+                  transition={{ type: "spring", damping: 25, stiffness: 500 }}
+                  className="relative p-6 max-w-4xl mx-auto"
                 >
-                  {post.title}
-                </h1>
-
-                {/* Meta Bilgiler */}
-                <div 
-                  className="text-sm text-blue-400 mb-6"
-                  style={{ textShadow: '0 0 20px rgba(59, 130, 246, 0.6)' }}
-                >
-                  {post.category && (
+                  {isLoading ? (
+                    <Skeleton />
+                  ) : (
                     <>
-                      Kategori: {post.category}
-                      <span className="mx-2">•</span>
+                      <h1 className="text-2xl sm:text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-blue-300 to-blue-400"
+                          style={{
+                            textShadow: '0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.6)'
+                          }}>
+                        {currentPost.title}
+                      </h1>
+
+                      <div className="text-sm text-blue-400 mb-6">
+                        {currentPost.categories?.map((category, index) => (
+                          <span key={category}>
+                            {category}
+                            {index < currentPost.categories.length - 1 && <span className="mx-2">•</span>}
+                          </span>
+                        ))}
+                        {currentPost.createdAt && (
+                          <>
+                            <span className="mx-2">•</span>
+                            {new Date(currentPost.createdAt).toLocaleDateString('tr-TR')}
+                          </>
+                        )}
+                      </div>
+
+                      <div className="space-y-6">
+                        {currentPost.blocks?.map((block, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="overflow-x-auto"
+                          >
+                            {block.type === 'text' ? (
+                              <div className="prose prose-invert max-w-none">
+                                <ReactMarkdown>{block.content}</ReactMarkdown>
+                              </div>
+                            ) : (
+                              <div className="rounded-lg overflow-hidden">
+                                <CodeScreen code={block.code} title={block.codeTitle} />
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
                     </>
                   )}
-                  {post.createdAt && (
-                    <>{new Date(post.createdAt).toLocaleDateString('tr-TR')}</>
-                  )}
-                </div>
-
-                {/* İçerik Blokları */}
-                <div className="space-y-6">
-                  {post.blocks?.map((block, index) => (
-                    <motion.div 
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="group relative"
-                    >
-                      {block.type === 'text' ? (
-                        // Metin Bloğu
-                        <div 
-                          className="prose prose-invert max-w-none prose-p:text-blue-100/90 prose-headings:text-blue-200"
-                          style={{
-                            textShadow: '0 0 30px rgba(59, 130, 246, 0.3)'
-                          }}
-                        >
-                          <ReactMarkdown>{block.content}</ReactMarkdown>
-                        </div>
-                      ) : (
-                        // Kod Bloğu
-                        <div 
-                          className="rounded-lg overflow-hidden relative group"
-                          style={{
-                            boxShadow: `
-                              0 0 30px -10px rgba(59, 130, 246, 0.5),
-                              inset 0 0 20px -10px rgba(59, 130, 246, 0.3)
-                            `
-                          }}
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          <CodeScreen code={block.code} title={block.codeTitle} />
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
+                </motion.div>
+              </AnimatePresence>
             </div>
 
-            {/* ----- Kapatma Butonu ----- */}
+            {/* Kapatma Butonu */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -177,24 +234,10 @@ export default function PostModal({ post, isOpen, onClose }) {
                 onClose();
                 navigate(-1);
               }}
-              className="absolute top-4 right-4 p-2 rounded-full bg-gray-800/80 hover:bg-gray-700/80 transition-all duration-300 group"
-              style={{
-                boxShadow: '0 0 30px -10px rgba(59, 130, 246, 0.6)'
-              }}
+              className="absolute top-4 right-4 p-2 rounded-full bg-gray-800/50 hover:bg-gray-700/50 transition-colors group"
             >
-              <div className="absolute inset-0 rounded-full bg-blue-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur" />
-              <svg 
-                className="w-6 h-6 text-blue-400 relative z-10" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M6 18L18 6M6 6l12 12"
-                />
+              <svg className="w-6 h-6 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </motion.button>
           </motion.div>
