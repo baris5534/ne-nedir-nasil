@@ -79,7 +79,7 @@ export default function PostModal({ post, isOpen, onClose, categoryPosts }) {
               onClose();
               navigate(-1);
             }}
-            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
           />
 
           {/* Modal Container */}
@@ -88,7 +88,7 @@ export default function PostModal({ post, isOpen, onClose, categoryPosts }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 400 }}
-            className="fixed inset-4 top-20 z-50 rounded-xl bg-gray-900/95 border border-blue-500/50 flex flex-col"
+            className="fixed inset-4 top-20 z-50 p-3 rounded-xl bg-gray-900/95 border border-blue-500/50 flex flex-col"
             style={{
               boxShadow: `
                 0 0 100px -30px rgba(59, 130, 246, 0.7),
@@ -99,59 +99,19 @@ export default function PostModal({ post, isOpen, onClose, categoryPosts }) {
           >
             {/* Kaydırılabilir İçerik Alanı */}
             <div className="flex-1 overflow-y-auto relative">
-              {/* Navigasyon Butonları */}
-              <div className="fixed left-8 right-8 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-10">
-                {previousPost && (
-                  <div className="flex items-center space-x-2 pointer-events-auto">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        changePost(previousPost);
-                      }}
-                      className="p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors group flex items-center space-x-2"
-                    >
-                      <svg className="w-5 h-5 transform rotate-180 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      <div className="text-sm">
-                        <div className="text-blue-400/60 font-medium">Önceki Yazı</div>
-                        <div className="text-blue-300 line-clamp-1 max-w-[200px]">{previousPost.title}</div>
-                      </div>
-                    </button>
-                  </div>
-                )}
-                
-                {nextPost && (
-                  <div className="flex items-center space-x-2 pointer-events-auto">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        changePost(nextPost);
-                      }}
-                      className="p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors group flex items-center space-x-2"
-                    >
-                      <div className="text-sm text-right">
-                        <div className="text-blue-400/60 font-medium">Sonraki Yazı</div>
-                        <div className="text-blue-300 line-clamp-1 max-w-[200px]">{nextPost.title}</div>
-                      </div>
-                      <svg className="w-5 h-5 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </div>
+              
+              
 
               {/* Efekt Katmanı */}
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Gradientler */}
-                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-blue-500/20 to-transparent" />
+               <div className="absolute inset-0 pointer-events-none">
+                {/* Gradientler  */}
+                {/* <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-blue-500/20 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-blue-500/20 to-transparent" />
                 <div className="absolute top-0 bottom-0 left-0 w-32 bg-gradient-to-r from-blue-500/20 to-transparent" />
-                <div className="absolute top-0 bottom-0 right-0 w-32 bg-gradient-to-l from-blue-500/20 to-transparent" />
+                <div className="absolute top-0 bottom-0 right-0 w-32 bg-gradient-to-l from-blue-500/20 to-transparent" /> */}
 
-                {/* Yanıp Sönen Kenarlık */}
-                <div className="absolute inset-0 rounded-xl overflow-hidden">
+                 {/* Yanıp Sönen Kenarlık  */}
+                {/* <div className="absolute inset-0 rounded-xl overflow-hidden">
                   <div 
                     className="absolute inset-0 opacity-50"
                     style={{
@@ -160,8 +120,8 @@ export default function PostModal({ post, isOpen, onClose, categoryPosts }) {
                       animation: 'shimmer 3s infinite'
                     }}
                   />
-                </div>
-              </div>
+                </div> */}
+              </div> 
 
               {/* Ana İçerik */}
               <AnimatePresence mode="wait">
@@ -223,7 +183,52 @@ export default function PostModal({ post, isOpen, onClose, categoryPosts }) {
                     </>
                   )}
                 </motion.div>
+              
               </AnimatePresence>
+              
+              {/* Navigasyon Butonları */}
+              <div className="xl:fixed text-ellipsis xl:px-10 xl:left-8 xl:right-8 xl:top-1/2 xl:-translate-y-1/2 flex xl:justify-between justify-around max-lg:pb-16 lg:flex pointer-events-none z-10">
+                {previousPost && (
+                  <div className="flex items-center space-x-2 pointer-events-auto">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        changePost(previousPost);
+                      }}
+                      className="p-3 max-lg:max-w-36 w-[200px] max-h-16 text-left rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors group flex items-center space-x-2"
+                    >
+                      <svg className="w-5 h-5 transform rotate-180 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                      <div className="text-sm">
+                        <div className="text-blue-400/60 font-medium">Önceki Yazı</div>
+                        <div className="text-blue-300 line-clamp-1 max-w-[200px]">{previousPost.title}</div>
+                      </div>
+                    </button>
+                  </div>
+                )}
+                
+                {nextPost && (
+                  <div className="flex items-center space-x-2 pointer-events-auto">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        changePost(nextPost);
+                      }}
+                      className="p-3 max-lg:max-w-36 w-[200px] max-h-16 text-left rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors group flex items-center space-x-2"
+                    >
+                      <div className="text-sm">
+                        <div className="text-blue-400/60 font-medium">Sonraki Yazı</div>
+                        <div className="text-blue-300 line-clamp-1 max-w-[200px]">{nextPost.title}</div>
+                      </div>
+                      <svg className="w-5 h-5 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+
             </div>
 
             {/* Kapatma Butonu */}
