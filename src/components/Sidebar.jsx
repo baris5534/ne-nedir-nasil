@@ -76,7 +76,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
             {/* Sidebar */}
             <div 
-                className={`fixed top-16 left-0 h-[calc(100vh-4rem)] w-[280px] bg-gray-900/95 border-r border-blue-500/20 
+                className={`fixed left-0 h-[calc(120%-4rem)] w-[280px] bg-gray-900/95 border-r border-blue-500/20 
                     transform transition-transform duration-300 ease-in-out z-50 overflow-y-auto
                     lg:translate-x-0 lg:z-30 lg:fixed shadow-[5px_0_30px_-15px] shadow-blue-500/20
                     ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}

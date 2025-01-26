@@ -191,7 +191,7 @@ export default function Home() {
               // Sadece yazı olan kategorileri göster
               activeCategories.map(category => (
                 <div key={category.id}>
-                  <h2 className="text-xl font-bold mb-4">
+                  <h2 className="text-xl ml-2 font-bold mb-4">
                     {category.name}
                   </h2>
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">

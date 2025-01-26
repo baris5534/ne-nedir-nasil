@@ -359,7 +359,7 @@ export default function AdminPanel() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <div className="max-w-4xl mx-auto py-4">
       <h1 className="text-2xl font-bold mb-6">İçerik Yönetimi</h1>
       
       <CategoryManager onCategoryAdded={fetchCategories} />
@@ -371,7 +371,7 @@ export default function AdminPanel() {
       )}
 
       {/* Mevcut yazıların listesi */}
-      <div className="mb-8">
+      <div className="mb-8 mt-6 ">
         <h2 className="text-xl font-bold mb-4">Mevcut Yazılar</h2>
         <div className="space-y-4">
           {posts.map(post => (
@@ -388,7 +388,7 @@ export default function AdminPanel() {
                     {new Date(post.createdAt).toLocaleDateString('tr-TR')}
                   </p>
                 </div>
-                <div className="space-x-2">
+                <div className="space-x-2 amx-lg:max-w-[350px] flex items-center">
                   <button
                     onClick={() => startEditing(post)}
                     className="px-3 py-1 bg-blue-600 rounded hover:bg-blue-700"

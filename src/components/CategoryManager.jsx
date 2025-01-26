@@ -73,11 +73,11 @@ export default function CategoryManager() {
     }
 
     return (
-        <div className="p-4">
+        <div className="p-4 max-lg:p-0">
             <h2 className="text-xl font-bold mb-4">Kategori Yönetimi</h2>
 
             <form onSubmit={handleAddCategory}>
-                <div className="flex flex-col gap-2">
+                <div className="flex max-lg:max-w-[350px] flex-col gap-2">
                     <input
                         type="text"
                         value={newCategory.name}

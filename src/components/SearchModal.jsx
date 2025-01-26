@@ -54,7 +54,7 @@ export default function SearchModal({ isOpen, onClose, posts }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/80 h-screen backdrop-blur-sm z-50"
+            className="fixed inset-0 h-screen backdrop-blur-sm z-50"
           />
 
           {/* Modal */}
@@ -65,14 +65,14 @@ export default function SearchModal({ isOpen, onClose, posts }) {
             className="fixed top-4 left-4 right-4 z-50"
           >
             <form onSubmit={handleSearch} className="relative">
-              <div className="sticky top-0 bg-gray-900/95 p-4 border-b border-blue-500/20">
+              <div className="sticky top-0 bg-gray-90 p-4 border-b border-blue-500/20">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Yazılarda ara..."
                   autoFocus
-                  className="w-full px-4 py-3 bg-gray-800/95 border border-blue-500/30 rounded-lg 
+                  className="w-full pl-4 pr-12 py-3 bg-gray-800/95 border border-blue-500/30 rounded-lg 
                            focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20
                            text-blue-100 placeholder-blue-400/50 transition-all duration-300
                            shadow-lg shadow-blue-500/20"
@@ -80,7 +80,7 @@ export default function SearchModal({ isOpen, onClose, posts }) {
               </div>
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-blue-400/60 
+                className="absolute right-2 top-1/2 -translate-y-1/2 py-2 px-6 text-blue-400/60 
                          hover:text-blue-400 transition-colors duration-300"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
