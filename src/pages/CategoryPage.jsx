@@ -1,59 +1,35 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { useParams } from 'react-router-dom';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import ReactMarkdown from 'react-markdown';
-import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 import { CategoryIcon } from '../components/icons/CategoryIcons';
-
-const CategoryPageSkeleton = () => (
-  <div className="animate-pulse max-w-4xl mx-auto p-4">
-    {/* Başlık Skeleton */}
-    <div className="h-12 bg-blue-400/20 rounded-lg w-1/2 mb-8" />
-    
-    {/* İçerik Grid */}
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {[1, 2, 3, 4, 5, 6].map(i => (
-        <div key={i} className="relative">
-          <div className="absolute -inset-0.5 bg-blue-500/20 rounded-xl blur"></div>
-          <div className="relative p-6 bg-gray-800/80 rounded-xl border border-blue-500/20">
-            <div className="h-7 bg-blue-400/20 rounded-lg w-3/4 mb-4" />
-            <div className="space-y-2">
-              <div className="h-4 bg-blue-400/20 rounded w-full" />
-              <div className="h-4 bg-blue-400/20 rounded w-5/6" />
-              <div className="h-4 bg-blue-400/20 rounded w-4/6" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
+import { motion } from 'framer-motion';
 
 export default function CategoryPage() {
     const { categoryName } = useParams();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [categories, setCategories] = useState([]);
-    const [currentCategory, setCurrentCategory] = useState(null);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchPosts = async () => {
+            setLoading(true);
             try {
-                const q = query(
-                    collection(db, 'posts'),
-                    where('categories', 'array-contains', categoryName),
-                    orderBy('createdAt', 'desc')
-                );
+                const postsRef = collection(db, 'posts');
+                const q = query(postsRef, where('categories', 'array-contains', categoryName));
                 const querySnapshot = await getDocs(q);
+                
                 const postsData = querySnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
+                
                 setPosts(postsData);
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error fetching posts:', error);
+                setError('Yazılar yüklenirken bir hata oluştu');
             } finally {
                 setLoading(false);
             }
@@ -62,78 +38,67 @@ export default function CategoryPage() {
         fetchPosts();
     }, [categoryName]);
 
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const querySnapshot = await getDocs(collection(db, 'categories'));
-                const categoriesData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                console.log('CategoryPage - Categories:', categoriesData);
-                setCategories(categoriesData);
-                
-                // Mevcut kategoriyi bul
-                const current = categoriesData.find(cat => cat.name === categoryName);
-                console.log('Current Category:', current);
-                setCurrentCategory(current);
-            } catch (error) {
-                console.error('Kategoriler yüklenirken hata:', error);
-            }
-        };
-
-        fetchCategories();
-    }, [categoryName]);
-
-    if (loading) return <CategoryPageSkeleton />;
-
-    return (
-        <>
-            <Helmet>
-                <title>{categoryName} Yazıları - Next.js Blog</title>
-                <meta 
-                    name="description" 
-                    content={`${categoryName} kategorisindeki tüm yazılar. React, Next.js ve modern web teknolojileri hakkında bilgiler.`} 
-                />
-                <meta name="keywords" content={`${categoryName}, react, nextjs, javascript, web development`} />
-            </Helmet>
-            
-            <div className="max-w-4xl mx-auto p-4">
-                <div className="flex items-center space-x-3 mb-8">
-                    <CategoryIcon 
-                        name={categoryName} 
-                        className="w-8 h-8"
-                    />
-                    <h1 className="text-3xl font-bold">{categoryName} Yazıları</h1>
-                </div>
-
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {posts.map(post => (
-                        <Link
-                            key={post.id}
-                            to={`/blog/${post.id}`}
-                            className="block group"
-                        >
-                            <div className="p-6 bg-gray-800 rounded-xl hover:bg-gray-700/50 transition">
-                                <div className="flex items-center space-x-3 mb-4">
-                                    <CategoryIcon 
-                                        name={categoryName} 
-                                        className="w-5 h-5 text-blue-400"
-                                    />
-                                    <h2 className="text-xl font-semibold group-hover:text-blue-400 transition">
-                                        {post.title}
-                                    </h2>
-                                </div>
-                                
-                                {/* Post içeriği */}
-                                <div className="text-gray-400">
-                                    {post.blocks?.[0]?.content?.slice(0, 100)}...
-                                </div>
-                            </div>
-                        </Link>
+    if (loading) {
+        return (
+            <div className="container mx-auto p-4">
+                <div className="animate-pulse space-y-4">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-40 bg-blue-400/20 rounded-lg" />
                     ))}
                 </div>
             </div>
-        </>
+        );
+    }
+
+    if (error) {
+        return <div className="text-red-500 text-center p-4">{error}</div>;
+    }
+
+    return (
+        <div className="container mx-auto px-4">
+            <Helmet>
+                <title>{categoryName} Yazıları</title>
+            </Helmet>
+
+            <div className="mb-8 flex items-center gap-3">
+                <CategoryIcon name={categoryName} className="w-8 h-8 text-blue-400" />
+                <h1 className="text-2xl font-bold text-blue-100">
+                    {categoryName} Yazıları
+                </h1>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {posts.map(post => (
+                    <motion.div
+                        key={post.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <Link 
+                            to={`/blog/${post.id}`}
+                            className="block bg-gray-800/50 rounded-xl p-6 hover:bg-gray-800/70 
+                                     border border-blue-500/20 hover:border-blue-500/40 
+                                     transition-all duration-300"
+                        >
+                            <h2 className="text-xl font-bold mb-3 text-blue-100">
+                                {post.title}
+                            </h2>
+                            <p className="text-blue-200/70 text-sm mb-4 line-clamp-3">
+                                {post.blocks?.[0]?.content}
+                            </p>
+                            <div className="text-sm text-blue-400">
+                                {new Date(post.createdAt).toLocaleDateString('tr-TR')}
+                            </div>
+                        </Link>
+                    </motion.div>
+                ))}
+            </div>
+
+            {posts.length === 0 && (
+                <div className="text-center py-12 text-blue-400">
+                    Bu kategoride henüz yazı bulunmuyor.
+                </div>
+            )}
+        </div>
     );
 } 

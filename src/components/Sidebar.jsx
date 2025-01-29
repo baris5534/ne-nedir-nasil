@@ -1,40 +1,33 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { CategoryIcon } from './icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CATEGORY_ICONS } from '../utils/categoryIcons.jsx';
-
 
 export default function Sidebar({ isOpen, onClose }) {
-    const [posts, setPosts] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [openCategories, setOpenCategories] = useState({});
     const location = useLocation();
-
-    useEffect(() => {
-        if (isOpen) onClose();
-    }, [location.pathname]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const categoriesSnapshot = await getDocs(
-                    query(collection(db, 'categories'), orderBy('createdAt', 'asc'))
-                );
+                const [categoriesSnapshot, postsSnapshot] = await Promise.all([
+                    getDocs(collection(db, 'categories')),
+                    getDocs(collection(db, 'posts'))
+                ]);
+
                 const categoriesData = categoriesSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
                 setCategories(categoriesData);
 
-                const q = query(collection(db, 'posts'), orderBy('createdAt', 'asc'));
-                const querySnapshot = await getDocs(q);
-                const postsData = querySnapshot.docs.map(doc => ({
+                const postsData = postsSnapshot.docs.map(doc => ({
                     id: doc.id,
-                    ...doc.data(),
-                    categories: doc.data().categories || []
+                    ...doc.data()
                 }));
                 setPosts(postsData);
             } catch (error) {
@@ -47,151 +40,119 @@ export default function Sidebar({ isOpen, onClose }) {
         fetchData();
     }, []);
 
+    // Yazıları kategorilere göre grupla
     const postsByCategory = categories.reduce((acc, category) => {
-        const categoryPosts = posts.filter(post => 
+        acc[category.name] = posts.filter(post => 
             post.categories?.includes(category.name)
         );
-        if (categoryPosts.length > 0) {
-            acc[category.name] = categoryPosts;
-        }
         return acc;
     }, {});
 
-    const toggleCategory = (category) => {
-        setOpenCategories(prev => ({
-            ...prev,
-            [category]: !prev[category]
-        }));
-    };
+    const SidebarContent = () => (
+        <div className="flex flex-col h-full">
+            {/* Logo ve Başlık */}
+            <div className="pt-6 px-6 pb-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 
+                                  rounded-xl flex items-center justify-center shadow-lg">
+                        <span className="text-white text-xl font-bold">N</span>
+                    </div>
+                    <div>
+                        <h1 className="text-lg font-bold text-blue-100">NE?</h1>
+                        <p className="text-sm text-blue-400/80">Blog & Döküman</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Ana Menü */}
+            <div className="px-3 py-2">
+                <Link 
+                    to="/"
+                    onClick={onClose}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                              ${location.pathname === '/' 
+                                ? 'bg-blue-500/20 text-blue-300' 
+                                : 'text-blue-400/80 hover:bg-blue-500/10 hover:text-blue-300'}`}
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span>Ana Sayfa</span>
+                </Link>
+            </div>
+
+            {/* Kategoriler */}
+            <div className="flex-1 overflow-y-auto px-3 py-2">
+                <div className="text-xs font-medium text-blue-400/60 px-3 py-2 uppercase">
+                    Kategoriler
+                </div>
+                {loading ? (
+                    <div className="space-y-2 px-3">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="h-10 bg-blue-400/10 rounded-lg animate-pulse" />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="space-y-1">
+                        {categories.map(category => (
+                            <Link
+                                key={category.id}
+                                to={`/category/${category.name}`}
+                                onClick={onClose}
+                                className={`flex items-center justify-between px-3 py-2 rounded-lg
+                                          group transition-colors
+                                          ${location.pathname === `/category/${category.name}`
+                                            ? 'bg-blue-500/20 text-blue-300'
+                                            : 'text-blue-400/80 hover:bg-blue-500/10 hover:text-blue-300'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <CategoryIcon name={category.name} className="w-5 h-5" />
+                                    <span>{category.name}</span>
+                                </div>
+                                <span className="text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-400/60">
+                                    {postsByCategory[category.name]?.length || 0}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 
     return (
         <>
             {/* Mobil Overlay */}
-            <div 
-                className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${
-                    isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                }`}
-                onClick={onClose}
-            />
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={onClose}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+                    />
+                )}
+            </AnimatePresence>
 
-            {/* Sidebar */}
-            <div 
-                className={`fixed left-0 h-[calc(120%-4rem)] w-[280px] bg-gray-900/95 border-r border-blue-500/20 
-                    transform transition-transform duration-300 ease-in-out z-50 overflow-y-auto
-                    lg:translate-x-0 lg:z-30 lg:fixed shadow-[5px_0_30px_-15px] shadow-blue-500/20
-                    ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+            {/* Mobil Sidebar */}
+            <motion.aside
+                initial={{ x: -280 }}
+                animate={{ x: isOpen ? 0 : -280 }}
+                transition={{ duration: 0.2 }}
+                className="fixed top-0 left-0 h-screen w-[280px] bg-gray-900/95 backdrop-blur-md z-50
+                          border-r border-blue-500/20 lg:hidden"
             >
-                <div className="h-full">
-                    <div className="p-6">
-                        {/* Header */}
-                        <div className="flex justify-between items-center mb-8">
-                            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent animate-neon-glow">
-                                Blog
-                            </h1>
-                            <button
-                                onClick={onClose}
-                                className="p-2 hover:bg-blue-500/10 rounded-lg lg:hidden relative group"
-                            >
-                                <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
-                                <svg className="w-6 h-6 text-blue-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
+                <SidebarContent />
+            </motion.aside>
 
-                        {/* Navigation */}
-                        <nav className="space-y-8">
-                            {/* Ana Menü */}
-                            <div>
-                                <h2 className="text-xs uppercase text-blue-400/80 font-medium mb-4 animate-neon-glow">
-                                    Menü
-                                </h2>
-                                <ul className="space-y-2">
-                                    <li>
-                                        <Link
-                                            to="/"
-                                            className="flex items-center px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
-                                            onClick={onClose}
-                                        >
-                                            <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
-                                                Ana Sayfa
-                                            </span>
-                                            <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
-                                        </Link>
-                                    </li>
-                                    {/* Admin linki için koşullu render */}
-                                    {sessionStorage.getItem('isAdminAuthenticated') === 'true' && (
-                                        <li>
-                                            <Link
-                                                to="/admin"
-                                                className="flex items-center px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
-                                                onClick={onClose}
-                                            >
-                                                <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
-                                                    Admin Panel
-                                                </span>
-                                                <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
-                                            </Link>
-                                        </li>
-                                    )}
-                                </ul>
-                            </div>
-
-                            {/* Kategoriler */}
-                            <div>
-                                <h2 className="text-xs uppercase text-blue-400/80 font-medium mb-4 animate-neon-glow">
-                                    Kategoriler
-                                </h2>
-                                {loading ? (
-                                    <div className="text-sm text-blue-300/50">Yükleniyor...</div>
-                                ) : (
-                                    <ul className="space-y-1">
-                                        {categories.map(category => (
-                                            postsByCategory[category.name]?.length > 0 && (
-                                                <li key={category.id}>
-                                                    <button
-                                                        onClick={() => toggleCategory(category.name)}
-                                                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-300 relative group hover:bg-blue-500/10"
-                                                    >
-                                                        <div className="flex items-center space-x-2">
-                                                        <span className="w-6 h-6">
-                            {CATEGORY_ICONS[category.icon] || CATEGORY_ICONS.default}
-                        </span>
-                                                            <span className="text-blue-100/80 group-hover:text-blue-400 transition-colors">
-                                                                {category.name}
-                                                            </span>
-                                                        </div>
-                                                        <span className="text-xs text-blue-400/60 group-hover:text-blue-400/80 transition-colors">
-                                                            ({postsByCategory[category.name]?.length || 0})
-                                                        </span>
-                                                        <div className="absolute inset-0 bg-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
-                                                    </button>
-
-                                                    {openCategories[category.name] && (
-                                                        <ul className="ml-4 mt-1 space-y-1">
-                                                            {postsByCategory[category.name]?.map(post => (
-                                                                <li key={post.id}>
-                                                                    <Link
-                                                                        to={`/blog/${post.id}`}
-                                                                        className="block px-3 py-1 text-sm text-blue-300/60 hover:text-blue-400 transition-colors"
-                                                                        onClick={onClose}
-                                                                    >
-                                                                        {post.title}
-                                                                    </Link>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    )}
-                                                </li>
-                                            )
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-                        </nav>
-                    </div>
-                </div>
-            </div>
+            {/* Desktop Sidebar */}
+            <aside className="hidden lg:block fixed top-0 left-0 h-screen w-[280px] bg-gray-900/95 
+                            backdrop-blur-md z-50 border-r border-blue-500/20">
+                <SidebarContent />
+            </aside>
         </>
     );
 }
