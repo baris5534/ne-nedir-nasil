@@ -3,11 +3,11 @@ import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
 
 export default function SearchAutocomplete({ 
-    searchQuery, 
-    posts, 
-    onSelect,
-    isSearchFocused,
-    setIsSearchFocused,
+    searchQuery = '',
+    posts = [],
+    onSelect = () => {},
+    isSearchFocused = false,
+    setIsSearchFocused = () => {},
     isMobile = false
 }) {
     const wrapperRef = useRef(null);
@@ -78,14 +78,16 @@ export default function SearchAutocomplete({
     );
 }
 
-SearchAutocomplete.propTypes = {
-    searchQuery: PropTypes.string.isRequired,
-    posts: PropTypes.array.isRequired,
-    onSelect: PropTypes.func.isRequired,
-    isSearchFocused: PropTypes.bool.isRequired,
-    setIsSearchFocused: PropTypes.func.isRequired,
-    isMobile: PropTypes.bool
-};
+if (process.env.NODE_ENV !== 'production') {
+    SearchAutocomplete.propTypes = {
+        searchQuery: PropTypes.string,
+        posts: PropTypes.array,
+        onSelect: PropTypes.func,
+        isSearchFocused: PropTypes.bool,
+        setIsSearchFocused: PropTypes.func,
+        isMobile: PropTypes.bool
+    };
+}
 
 SearchAutocomplete.defaultProps = {
     isMobile: false
