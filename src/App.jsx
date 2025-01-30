@@ -7,7 +7,6 @@ import Home from "./pages/Home";
 import AdminPanel from "./pages/AdminPanel";
 import BlogPost from "./pages/BlogPost";
 import CategoryPage from "./pages/CategoryPage";
-import Footer from "./components/Footer";
 import { HelmetProvider } from 'react-helmet-async';
 import SearchPage from './pages/SearchPage';
 import AdminLogin from './pages/AdminLogin';

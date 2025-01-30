@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import SearchAutocomplete from './SearchAutocomplete';
+import PropTypes from 'prop-types';
 
 export default function Navbar({ onMenuClick }) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -11,6 +12,7 @@ export default function Navbar({ onMenuClick }) {
     const [showMobileSearch, setShowMobileSearch] = useState(false);
     const [posts, setPosts] = useState([]);
     const navigate = useNavigate();
+    const mobileSearchRef = useRef(null);
 
     useEffect(() => {
         const fetchPosts = async () => {
@@ -29,6 +31,20 @@ export default function Navbar({ onMenuClick }) {
         fetchPosts();
     }, []);
 
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (mobileSearchRef.current && 
+                !mobileSearchRef.current.contains(event.target) &&
+                !event.target.closest('button')) {
+                setShowMobileSearch(false);
+                setIsSearchFocused(false);
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const handleSearch = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
@@ -41,7 +57,11 @@ export default function Navbar({ onMenuClick }) {
 
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
-        setIsSearchFocused(true);
+        if (e.target.value.length >= 2) {
+            setIsSearchFocused(true);
+        } else {
+            setIsSearchFocused(false);
+        }
     };
 
     return (
@@ -92,28 +112,33 @@ export default function Navbar({ onMenuClick }) {
                                 type="text"
                                 value={searchQuery}
                                 onChange={handleSearchChange}
-                                onFocus={() => setIsSearchFocused(true)}
+                                onFocus={() => searchQuery.length >= 2 && setIsSearchFocused(true)}
                                 placeholder="Yazılarda ara..."
                                 className="w-full px-4 py-2 bg-gray-800/50 border border-blue-500/20 rounded-lg 
                                          focus:outline-none focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20
-                                         text-blue-100 placeholder-blue-400/50 transition-all duration-300"
+                                         text-blue-100 placeholder-blue-400/50 transition-all duration-300
+                                         relative z-[50]"
                             />
                             <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-blue-400/60 hover:text-blue-400">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </button>
-                            <SearchAutocomplete
-                                searchQuery={searchQuery}
-                                posts={posts}
-                                isSearchFocused={isSearchFocused}
-                                setIsSearchFocused={setIsSearchFocused}
-                                onSelect={(postId) => {
-                                    setSearchQuery('');
-                                    setIsSearchFocused(false);
-                                    navigate(`/blog/${postId}`);
-                                }}
-                            />
+                            <AnimatePresence>
+                                {isSearchFocused && (
+                                    <SearchAutocomplete
+                                        searchQuery={searchQuery}
+                                        posts={posts}
+                                        isSearchFocused={isSearchFocused}
+                                        setIsSearchFocused={setIsSearchFocused}
+                                        onSelect={(postId) => {
+                                            setSearchQuery('');
+                                            setIsSearchFocused(false);
+                                            navigate(`/blog/${postId}`);
+                                        }}
+                                    />
+                                )}
+                            </AnimatePresence>
                         </form>
                     </div>
 
@@ -136,39 +161,48 @@ export default function Navbar({ onMenuClick }) {
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             className="md:hidden overflow-hidden border-t border-blue-500/20"
+                            ref={mobileSearchRef}
                         >
-                            <div className="relative">
-                                <form onSubmit={handleSearch} className="relative p-4">
+                            <div className="relative p-4">
+                                <form onSubmit={handleSearch}>
                                     <input
                                         type="text"
                                         value={searchQuery}
                                         onChange={handleSearchChange}
-                                        onFocus={() => setIsSearchFocused(true)}
+                                        onFocus={() => searchQuery.length >= 2 && setIsSearchFocused(true)}
                                         placeholder="Yazılarda ara..."
                                         className="w-full px-4 py-2 bg-gray-800/50 border border-blue-500/20 rounded-lg 
                                                  focus:outline-none focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20
-                                                 text-blue-100 placeholder-blue-400/50"
+                                                 text-blue-100 placeholder-blue-400/50 relative z-[50]"
                                         autoFocus
                                     />
-                                    <button type="submit" className="absolute right-6 top-1/2 -translate-y-1/2 p-2 text-blue-400/60 hover:text-blue-400">
+                                    <button 
+                                        type="submit" 
+                                        className="absolute right-6 top-1/2 -translate-y-1/2 p-2 text-blue-400/60 hover:text-blue-400 z-[51]"
+                                    >
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                         </svg>
                                     </button>
                                 </form>
-                                <SearchAutocomplete
-                                    searchQuery={searchQuery}
-                                    posts={posts}
-                                    isSearchFocused={isSearchFocused}
-                                    setIsSearchFocused={setIsSearchFocused}
-                                    onSelect={(postId) => {
-                                        setSearchQuery('');
-                                        setIsSearchFocused(false);
-                                        setShowMobileSearch(false);
-                                        navigate(`/blog/${postId}`);
-                                    }}
-                                    isMobile={true}
-                                />
+                                <AnimatePresence>
+                                    {isSearchFocused && (
+                                        <SearchAutocomplete
+                                            searchQuery={searchQuery}
+                                            posts={posts}
+                                            isSearchFocused={isSearchFocused}
+                                            setIsSearchFocused={setIsSearchFocused}
+                                            onSelect={(postId) => {
+                                                setSearchQuery('');
+                                                setIsSearchFocused(false);
+                                                setShowMobileSearch(false);
+                                                navigate(`/blog/${postId}`);
+                                            }}
+                                            isMobile={true}
+                                        />
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </motion.div>
                     )}
@@ -176,4 +210,8 @@ export default function Navbar({ onMenuClick }) {
             </div>
         </nav>
     );
-} 
+}
+
+Navbar.propTypes = {
+    onMenuClick: PropTypes.func.isRequired
+}; 

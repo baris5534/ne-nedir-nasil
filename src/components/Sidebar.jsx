@@ -4,6 +4,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { CategoryIcon } from './icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
+import PropTypes from 'prop-types';
 
 export default function Sidebar({ isOpen, onClose }) {
     const [categories, setCategories] = useState([]);
@@ -156,3 +157,8 @@ export default function Sidebar({ isOpen, onClose }) {
         </>
     );
 }
+
+Sidebar.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired
+};

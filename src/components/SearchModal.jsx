@@ -62,17 +62,17 @@ export default function SearchModal({ isOpen, onClose, posts }) {
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
-            className="fixed top-4 left-4 right-4 z-50"
+            className="fixed top-4 left-4 right-4 z-50 h-full"
           >
             <form onSubmit={handleSearch} className="relative">
-              <div className="sticky top-0 bg-gray-90 p-4 border-b border-blue-500/20">
+              <div className="sticky h-96 top-0 bg-gray-90 p-4 border-b border-blue-500/20">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Yazılarda ara..."
                   autoFocus
-                  className="w-full pl-4 pr-12 py-3 bg-gray-800/95 border border-blue-500/30 rounded-lg 
+                  className="w-full absolute pl-4 pr-12 py-3 bg-gray-800/95 border border-blue-500/30 rounded-lg 
                            focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20
                            text-blue-100 placeholder-blue-400/50 transition-all duration-300
                            shadow-lg shadow-blue-500/20"
