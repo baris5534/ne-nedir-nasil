@@ -78,17 +78,20 @@ export default function SearchAutocomplete({
     );
 }
 
-if (process.env.NODE_ENV !== 'production') {
-    SearchAutocomplete.propTypes = {
-        searchQuery: PropTypes.string,
-        posts: PropTypes.array,
-        onSelect: PropTypes.func,
-        isSearchFocused: PropTypes.bool,
-        setIsSearchFocused: PropTypes.func,
-        isMobile: PropTypes.bool
-    };
-}
+SearchAutocomplete.propTypes = {
+    searchQuery: PropTypes.string,
+    posts: PropTypes.array,
+    onSelect: PropTypes.func,
+    isSearchFocused: PropTypes.bool,
+    setIsSearchFocused: PropTypes.func,
+    isMobile: PropTypes.bool
+};
 
 SearchAutocomplete.defaultProps = {
+    searchQuery: '',
+    posts: [],
+    onSelect: () => {},
+    isSearchFocused: false,
+    setIsSearchFocused: () => {},
     isMobile: false
 }; 
