@@ -7,6 +7,8 @@ import { CATEGORY_ICONS } from '../utils/categoryIcons.jsx';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { Link } from 'react-router-dom';
+import CodePreview from '../components/CodePreview';
+import CodeExample from '../components/CodeExample';
 
 export default function BlogPost() {
   const { id } = useParams();
@@ -187,13 +189,15 @@ export default function BlogPost() {
                 <div className="prose prose-invert max-w-none">
                   <ReactMarkdown>{block.content}</ReactMarkdown>
                 </div>
-              ) : (
+              ) : block.type === 'code' ? (
                 <div className="rounded-lg overflow-hidden bg-gray-900 p-4">
                   <pre className="text-sm text-blue-200">
                     <code>{block.code}</code>
                   </pre>
                 </div>
-              )}
+              ) : block.type === 'example' ? (
+                <CodeExample exampleId={block.exampleId} />
+              ) : null}
             </motion.div>
           ))}
         </div>
@@ -220,6 +224,11 @@ export default function BlogPost() {
             <div className="text-lg font-semibold line-clamp-1">{nextPost.title}</div>
           </Link>
         )}
+      </div>
+
+      <div className="my-8">
+        <h2 className="text-xl font-bold mb-4">VSCode İkonu Örneği</h2>
+        <CodePreview />
       </div>
     </div>
   );

@@ -5,6 +5,8 @@ import MDEditor from '@uiw/react-md-editor';
 import CategoryManager from '../components/CategoryManager';
 import CodeScreen from '../components/Codescreen';
 import { useNavigate } from 'react-router-dom';
+import CodeExampleManager from '../components/CodeExampleManager';
+import { Tabs, TabsList, Tab, TabsContent } from '../components/ui/tabs';
 
 // Varsayılan dosya yapısı
 const defaultFileStructure = {
@@ -62,6 +64,8 @@ export default function AdminPanel() {
   const [editingNode, setEditingNode] = useState(null);
   const [newNodeName, setNewNodeName] = useState('');
   const [newNodeType, setNewNodeType] = useState('file');
+
+  const [codeExamples, setCodeExamples] = useState([]);
 
   useEffect(() => {
     const isAuthenticated = sessionStorage.getItem('isAdminAuthenticated') === 'true';
@@ -358,238 +362,286 @@ export default function AdminPanel() {
     });
   };
 
+  // Kod örneklerini yükle
+  useEffect(() => {
+    const fetchExamples = async () => {
+      const snapshot = await getDocs(collection(db, 'codeExamples'));
+      setCodeExamples(snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })));
+    };
+    fetchExamples();
+  }, []);
+
   return (
     <div className="max-w-4xl mx-auto py-4">
-      <h1 className="text-2xl font-bold mb-6">İçerik Yönetimi</h1>
-      
-      <CategoryManager onCategoryAdded={fetchCategories} />
+      <Tabs defaultValue="posts">
+        <TabsList>
+          <Tab value="posts">Yazılar</Tab>
+          <Tab value="categories">Kategoriler</Tab>
+          <Tab value="code-examples">Kod Örnekleri</Tab>
+        </TabsList>
 
-      {error && (
-        <div className="bg-red-500 text-white p-3 rounded mb-4">
-          Hata: {error}
-        </div>
-      )}
-
-      {/* Mevcut yazıların listesi */}
-      <div className="mb-8 mt-6 ">
-        <h2 className="text-xl font-bold mb-4">Mevcut Yazılar</h2>
-        <div className="space-y-4">
-          {posts.map(post => (
-            <div key={post.id} className="bg-gray-800 p-4 rounded-lg">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-semibold">{post.title}</h3>
-                  <p className="text-sm text-gray-400">
-                    Kategoriler: {post.categories?.length > 0 
-                      ? post.categories.join(', ') 
-                      : 'Kategorisiz'
-                    }
-                    <span className="mx-2">•</span>
-                    {new Date(post.createdAt).toLocaleDateString('tr-TR')}
-                  </p>
-                </div>
-                <div className="space-x-2 amx-lg:max-w-[350px] flex items-center">
-                  <button
-                    onClick={() => startEditing(post)}
-                    className="px-3 py-1 bg-blue-600 rounded hover:bg-blue-700"
-                  >
-                    Düzenle
-                  </button>
-                  <button
-                    onClick={() => handleDelete(post.id)}
-                    className="px-3 py-1 bg-red-600 rounded hover:bg-red-700"
-                  >
-                    Sil
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Yazı ekleme/düzenleme formu */}
-      <form onSubmit={editingPost ? handleUpdate : handleSubmit} className="space-y-4">
-        <h2 className="text-xl font-bold">
-          {editingPost ? 'Yazıyı Düzenle' : 'Yeni Yazı Ekle'}
-        </h2>
-
-        <div>
-          <label className="block mb-2">Başlık:</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500"
-            required
-          />
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-blue-400/80 mb-2">
-            Kategoriler
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {categories.map(category => (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => {
-                  setSelectedCategories(prev => {
-                    if (prev.includes(category.name)) {
-                      return prev.filter(cat => cat !== category.name);
-                    } else {
-                      return [...prev, category.name];
-                    }
-                  });
-                }}
-                className={`px-3 py-1.5 rounded text-sm transition-colors ${
-                  selectedCategories.includes(category.name)
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-700 text-blue-300 hover:bg-gray-600'
-                }`}
-              >
-                {category.name}
-                {selectedCategories.includes(category.name) && (
-                  <span className="ml-2">✓</span>
-                )}
-              </button>
-            ))}
-          </div>
-          <p className="text-sm text-blue-400/60 mt-1">
-            Seçili kategoriler: {selectedCategories.join(', ') || 'Yok'}
-          </p>
-        </div>
-
-        <div className="mt-8">
-          <h2 className="text-xl font-bold mb-4">İçerik Blokları</h2>
+        <TabsContent value="posts">
+          <h1 className="text-2xl font-bold mb-6">İçerik Yönetimi</h1>
           
-          {/* Mevcut blokların listesi */}
-          {blocks.map((block, index) => (
-            <div key={index} className="mb-4 p-4 bg-gray-800 rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">
-                  {block.type === 'text' ? 'Metin Bloğu' : 'Kod Bloğu'}
-                </span>
+          {error && (
+            <div className="bg-red-500 text-white p-3 rounded mb-4">
+              Hata: {error}
+            </div>
+          )}
+
+          {/* Mevcut yazıların listesi */}
+          <div className="mb-8 mt-6 ">
+            <h2 className="text-xl font-bold mb-4">Mevcut Yazılar</h2>
+            <div className="space-y-4">
+              {posts.map(post => (
+                <div key={post.id} className="bg-gray-800 p-4 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-lg font-semibold">{post.title}</h3>
+                      <p className="text-sm text-gray-400">
+                        Kategoriler: {post.categories?.length > 0 
+                          ? post.categories.join(', ') 
+                          : 'Kategorisiz'
+                        }
+                        <span className="mx-2">•</span>
+                        {new Date(post.createdAt).toLocaleDateString('tr-TR')}
+                      </p>
+                    </div>
+                    <div className="space-x-2 amx-lg:max-w-[350px] flex items-center">
+                      <button
+                        onClick={() => startEditing(post)}
+                        className="px-3 py-1 bg-blue-600 rounded hover:bg-blue-700"
+                      >
+                        Düzenle
+                      </button>
+                      <button
+                        onClick={() => handleDelete(post.id)}
+                        className="px-3 py-1 bg-red-600 rounded hover:bg-red-700"
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Yazı ekleme/düzenleme formu */}
+          <form onSubmit={editingPost ? handleUpdate : handleSubmit} className="space-y-4">
+            <h2 className="text-xl font-bold">
+              {editingPost ? 'Yazıyı Düzenle' : 'Yeni Yazı Ekle'}
+            </h2>
+
+            <div>
+              <label className="block mb-2">Başlık:</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500"
+                required
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-blue-400/80 mb-2">
+                Kategoriler
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {categories.map(category => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategories(prev => {
+                        if (prev.includes(category.name)) {
+                          return prev.filter(cat => cat !== category.name);
+                        } else {
+                          return [...prev, category.name];
+                        }
+                      });
+                    }}
+                    className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                      selectedCategories.includes(category.name)
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-700 text-blue-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    {category.name}
+                    {selectedCategories.includes(category.name) && (
+                      <span className="ml-2">✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-blue-400/60 mt-1">
+                Seçili kategoriler: {selectedCategories.join(', ') || 'Yok'}
+              </p>
+            </div>
+
+            <div className="mt-8">
+              <h2 className="text-xl font-bold mb-4">İçerik Blokları</h2>
+              
+              {/* Mevcut blokların listesi */}
+              {blocks.map((block, index) => (
+                <div key={index} className="mb-4 p-4 bg-gray-800 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-400">
+                      {block.type === 'text' ? 'Metin Bloğu' : 'Kod Bloğu'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeBlock(index)}
+                      className="text-red-500 hover:text-red-400"
+                    >
+                      Sil
+                    </button>
+                  </div>
+                  {block.type === 'text' ? (
+                    <div className="prose prose-invert max-w-none">
+                      <MDEditor.Markdown source={block.content} />
+                    </div>
+                  ) : (
+                    <CodeScreen code={block.code} title={block.codeTitle} />
+                  )}
+                </div>
+              ))}
+
+              {/* Yeni blok ekleme formu */}
+              <div className="mt-4 p-4 bg-gray-800 rounded-lg">
+                <div className="flex gap-4 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentBlock({ ...currentBlock, type: 'text' })}
+                    className={`px-4 py-2 rounded ${
+                      currentBlock.type === 'text' ? 'bg-blue-600' : 'bg-gray-700'
+                    }`}
+                  >
+                    Metin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentBlock({ ...currentBlock, type: 'code' })}
+                    className={`px-4 py-2 rounded ${
+                      currentBlock.type === 'code' ? 'bg-blue-600' : 'bg-gray-700'
+                    }`}
+                  >
+                    Kod
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentBlock({ ...currentBlock, type: 'example' })}
+                    className={`px-4 py-2 rounded ${
+                      currentBlock.type === 'example' ? 'bg-blue-600' : 'bg-gray-700'
+                    }`}
+                  >
+                    Kod Örneği
+                  </button>
+                </div>
+
+                {currentBlock.type === 'example' ? (
+                  <div>
+                    <label className="block mb-2">Kod Örneği Seç:</label>
+                    <select
+                      value={currentBlock.exampleId || ''}
+                      onChange={(e) => setCurrentBlock({ 
+                        type: 'example', 
+                        exampleId: e.target.value 
+                      })}
+                      className="w-full p-2 rounded bg-gray-700 border border-gray-600"
+                    >
+                      <option value="">Örnek seçin...</option>
+                      {codeExamples.map(example => (
+                        <option key={example.id} value={example.id}>
+                          {example.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : currentBlock.type === 'text' ? (
+                  <div>
+                    <label className="block mb-2">Metin İçeriği:</label>
+                    <MDEditor
+                      value={currentBlock.content}
+                      onChange={(value) => setCurrentBlock({ ...currentBlock, content: value })}
+                      preview="edit"
+                      height={200}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <div className="mb-4">
+                      <label className="block mb-2">Kod Başlığı:</label>
+                      <input
+                        type="text"
+                        value={currentBlock.codeTitle}
+                        onChange={(e) => setCurrentBlock({ ...currentBlock, codeTitle: e.target.value })}
+                        className="w-full p-2 rounded bg-gray-700 border border-gray-600"
+                        placeholder="Örn: Terminal, src/App.jsx"
+                      />
+                    </div>
+                    <label className="block mb-2">Kod:</label>
+                    <textarea
+                      value={currentBlock.code}
+                      onChange={(e) => setCurrentBlock({ ...currentBlock, code: e.target.value })}
+                      className="w-full p-2 rounded bg-gray-700 border border-gray-600 h-48 font-mono"
+                      placeholder="Kodunuzu buraya yazın..."
+                    />
+                    <div className="mt-4">
+                      <h3 className="text-lg font-semibold mb-2">Önizleme:</h3>
+                      <CodeScreen code={currentBlock.code} title={currentBlock.codeTitle} />
+                    </div>
+                  </div>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => removeBlock(index)}
-                  className="text-red-500 hover:text-red-400"
+                  onClick={addBlock}
+                  className="mt-4 w-full p-2 bg-green-600 hover:bg-green-700 rounded"
                 >
-                  Sil
+                  Bloğu Ekle
                 </button>
               </div>
-              {block.type === 'text' ? (
-                <div className="prose prose-invert max-w-none">
-                  <MDEditor.Markdown source={block.content} />
-                </div>
-              ) : (
-                <CodeScreen code={block.code} title={block.codeTitle} />
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                disabled={loading || blocks.length === 0}
+                className={`flex-1 p-2 rounded ${
+                  loading || blocks.length === 0
+                    ? 'bg-gray-600'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                } transition-colors`}
+              >
+                {loading ? 'İşlem yapılıyor...' : (editingPost ? 'Güncelle' : 'Yayınla')}
+              </button>
+
+              {editingPost && (
+                <button
+                  type="button"
+                  onClick={cancelEditing}
+                  className="flex-1 p-2 bg-gray-600 rounded hover:bg-gray-700"
+                >
+                  İptal
+                </button>
               )}
             </div>
-          ))}
+          </form>
+        </TabsContent>
 
-          {/* Yeni blok ekleme formu */}
-          <div className="mt-4 p-4 bg-gray-800 rounded-lg">
-            <div className="flex gap-4 mb-4">
-              <button
-                type="button"
-                onClick={() => setCurrentBlock({ ...currentBlock, type: 'text' })}
-                className={`px-4 py-2 rounded ${
-                  currentBlock.type === 'text' ? 'bg-blue-600' : 'bg-gray-700'
-                }`}
-              >
-                Metin
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentBlock({ ...currentBlock, type: 'code' })}
-                className={`px-4 py-2 rounded ${
-                  currentBlock.type === 'code' ? 'bg-blue-600' : 'bg-gray-700'
-                }`}
-              >
-                Kod
-              </button>
-            </div>
+        <TabsContent value="categories">
+          <CategoryManager onCategoryAdded={fetchCategories} />
+        </TabsContent>
 
-            {currentBlock.type === 'text' ? (
-              <div>
-                <label className="block mb-2">Metin İçeriği:</label>
-                <MDEditor
-                  value={currentBlock.content}
-                  onChange={(value) => setCurrentBlock({ ...currentBlock, content: value })}
-                  preview="edit"
-                  height={200}
-                />
-              </div>
-            ) : (
-              <div>
-                <div className="mb-4">
-                  <label className="block mb-2">Kod Başlığı:</label>
-                  <input
-                    type="text"
-                    value={currentBlock.codeTitle}
-                    onChange={(e) => setCurrentBlock({ ...currentBlock, codeTitle: e.target.value })}
-                    className="w-full p-2 rounded bg-gray-700 border border-gray-600"
-                    placeholder="Örn: Terminal, src/App.jsx"
-                  />
-                </div>
-                <label className="block mb-2">Kod:</label>
-                <textarea
-                  value={currentBlock.code}
-                  onChange={(e) => setCurrentBlock({ ...currentBlock, code: e.target.value })}
-                  className="w-full p-2 rounded bg-gray-700 border border-gray-600 h-48 font-mono"
-                  placeholder="Kodunuzu buraya yazın..."
-                />
-                <div className="mt-4">
-                  <h3 className="text-lg font-semibold mb-2">Önizleme:</h3>
-                  <CodeScreen code={currentBlock.code} title={currentBlock.codeTitle} />
-                </div>
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={addBlock}
-              className="mt-4 w-full p-2 bg-green-600 hover:bg-green-700 rounded"
-            >
-              Bloğu Ekle
-            </button>
-          </div>
-        </div>
-
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={loading || blocks.length === 0}
-            className={`flex-1 p-2 rounded ${
-              loading || blocks.length === 0
-                ? 'bg-gray-600'
-                : 'bg-blue-600 hover:bg-blue-700'
-            } transition-colors`}
-          >
-            {loading ? 'İşlem yapılıyor...' : (editingPost ? 'Güncelle' : 'Yayınla')}
-          </button>
-
-          {editingPost && (
-            <button
-              type="button"
-              onClick={cancelEditing}
-              className="flex-1 p-2 bg-gray-600 rounded hover:bg-gray-700"
-            >
-              İptal
-            </button>
-          )}
-        </div>
-      </form>
-
-      {/* Dosya Yapısı Yönetimi */}
-      <div className="mt-8 bg-gray-800 p-4 rounded-lg">
-        <h2 className="text-xl font-bold mb-4">Dosya Yapısı Yönetimi</h2>
-        <div className="border border-gray-700 rounded p-4">
-          {renderTree(fileStructure)}
-        </div>
-      </div>
+        <TabsContent value="code-examples">
+          <CodeExampleManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 } 

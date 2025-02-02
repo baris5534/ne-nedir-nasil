@@ -2,6 +2,25 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { CATEGORY_ICONS } from '../utils/categoryIcons.jsx';
+import { CategoryIcon } from './icons/CategoryIcons';
+
+// Kategori sıralaması
+const categoryOrder = [
+    'html',
+    'css',
+    'javascript',
+    'typescript',
+    'react',
+    'nextjs',
+    'vitejs',
+    'tailwind',
+    'framermotion',
+    'visualstudiocode',
+    'mobile',
+    'responsive',
+    'performance',
+    'seo'
+];
 
 export default function CategoryManager() {
     const [categories, setCategories] = useState([]);
@@ -68,6 +87,18 @@ export default function CategoryManager() {
         }
     };
 
+    // Kategorileri sırala
+    const sortedCategories = [...categories].sort((a, b) => {
+        const indexA = categoryOrder.indexOf(a.name.toLowerCase());
+        const indexB = categoryOrder.indexOf(b.name.toLowerCase());
+        
+        // Eğer kategori sıralama listesinde yoksa en sona at
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        
+        return indexA - indexB;
+    });
+
     if (loading) {
         return <div>Yükleniyor...</div>;
     }
@@ -115,7 +146,7 @@ export default function CategoryManager() {
 
             {/* Kategori Listesi */}
             <div className="space-y-4 mt-4">
-                {categories.map((category) => (
+                {sortedCategories.map((category) => (
                     <div key={category.id} className="p-3 bg-gray-800 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center space-x-2">

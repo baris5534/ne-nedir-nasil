@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-tabs": "^1.1.2",
     "@reduxjs/toolkit": "^2.5.0",
     "@uiw/react-md-editor": "^4.0.5",
+    "clsx": "^2.1.1",
     "firebase": "^11.1.0",
     "framer-motion": "^11.16.0",
     "react": "^18.3.1",
@@ -21,7 +23,8 @@
     "react-redux": "^9.2.0",
     "react-router": "^6.28.0",
     "react-router-dom": "^7.1.1",
-    "react-syntax-highlighter": "^15.6.1"
+    "react-syntax-highlighter": "^15.6.1",
+    "tailwind-merge": "^3.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
