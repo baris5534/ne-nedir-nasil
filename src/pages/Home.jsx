@@ -12,7 +12,6 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const location = useLocation();
 
   useEffect(() => {
@@ -34,7 +33,7 @@ export default function Home() {
         const postData = postSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-          categories: doc.data().categories || [] // Kategorileri diziye çevir
+          categories: doc.data().categories || []
         }));
         setPosts(postData);
       } catch (error) {
@@ -48,10 +47,15 @@ export default function Home() {
     fetchData();
   }, []);
 
-  if (loading) {
-    return <HomeSkeleton />;
-  }
+  // Yazıları kategorilere göre grupla
+  const postsByCategory = categories.reduce((acc, category) => {
+    acc[category.name] = posts.filter(post => 
+      post.categories?.includes(category.name)
+    );
+    return acc;
+  }, {});
 
+  if (loading) return <HomeSkeleton />;
   if (error) return <div className="text-red-500 text-center p-4">Hata: {error}</div>;
 
   return (
@@ -62,7 +66,7 @@ export default function Home() {
       </Helmet>
 
       <div className="min-h-screen bg-transparent">
-        {/* Daha kompakt Hero Section */}
+        {/* Hero Section */}
         <section className="relative overflow-hidden py-10 mb-8">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-indigo-500/10" />
           <div className="max-w-4xl mx-auto px-4">
@@ -86,49 +90,39 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Kategori Filtreleme - margin-bottom azaltıldı */}
-        <div className="max-w-7xl mx-auto px-4 mb-8">
-          <div className="flex flex-wrap gap-3 justify-center">
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-4 py-2 rounded-full border transition-all ${
-                selectedCategory === 'all'
-                ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
-                : 'border-blue-500/20 text-blue-400/60 hover:border-blue-500/40 hover:text-blue-300'
-              }`}
-            >
-              Tüm Yazılar
-            </button>
-            {categories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.name)}
-                className={`px-4 py-2 rounded-full border transition-all flex items-center gap-2 ${
-                  selectedCategory === category.name
-                  ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
-                  : 'border-blue-500/20 text-blue-400/60 hover:border-blue-500/40 hover:text-blue-300'
-                }`}
-              >
-                <CategoryIcon name={category.name} className="w-4 h-4" />
-                {category.name}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Kategorilere Göre Yazılar */}
+        <div className="max-w-7xl mx-auto px-4 space-y-12">
+          {categories.map(category => {
+            const categoryPosts = postsByCategory[category.name] || [];
+            if (categoryPosts.length === 0) return null;
 
-        {/* Blog Post Grid */}
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {(selectedCategory === 'all' ? posts : posts.filter(post => 
-              post.categories?.includes(selectedCategory)
-            )).map(post => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
-                categories={categories}
-              />
-            ))}
-          </div>
+            return (
+              <section key={category.id} className="relative">
+                {/* Kategori Başlığı */}
+                <div className="flex items-center gap-3 mb-6">
+                  <CategoryIcon name={category.name} className="w-6 h-6 text-blue-400" />
+                  <h2 className="text-xl font-bold text-blue-100">{category.name}</h2>
+                  <Link 
+                    to={`/category/${category.name}`}
+                    className="ml-auto text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    Tümünü Gör →
+                  </Link>
+                </div>
+
+                {/* Kategori Yazıları */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {categoryPosts.slice(0, 3).map(post => (
+                    <PostCard 
+                      key={post.id} 
+                      post={post} 
+                      categories={categories}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
       </div>
     </>
