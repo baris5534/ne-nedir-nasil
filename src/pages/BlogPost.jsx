@@ -6,7 +6,6 @@ import { Helmet } from 'react-helmet-async';
 import { CATEGORY_ICONS } from '../utils/categoryIcons.jsx';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import CodeScreen from '../components/CodeScreen';
 import { Link } from 'react-router-dom';
 
 export default function BlogPost() {
@@ -189,8 +188,10 @@ export default function BlogPost() {
                   <ReactMarkdown>{block.content}</ReactMarkdown>
                 </div>
               ) : (
-                <div className="rounded-lg overflow-hidden">
-                  <CodeScreen code={block.code} title={block.codeTitle} />
+                <div className="rounded-lg overflow-hidden bg-gray-900 p-4">
+                  <pre className="text-sm text-blue-200">
+                    <code>{block.code}</code>
+                  </pre>
                 </div>
               )}
             </motion.div>
