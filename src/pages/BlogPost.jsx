@@ -18,6 +18,7 @@ export default function BlogPost() {
   const [categoryPosts, setCategoryPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [codeExamples, setCodeExamples] = useState([]);
 
   // Post ve ilgili kategorideki diğer postları getir
   useEffect(() => {
@@ -57,6 +58,31 @@ export default function BlogPost() {
     fetchData();
   }, [id]); // id değiştiğinde yeniden yükle
 
+  // Kod örneklerini yükle
+  useEffect(() => {
+    const fetchCodeExamples = async () => {
+      if (post?.codeExampleIds?.length) {
+        try {
+          const examples = await Promise.all(
+            post.codeExampleIds.map(async (id) => {
+              const docRef = doc(db, 'codeExamples', id);
+              const docSnap = await getDoc(docRef);
+              if (docSnap.exists()) {
+                return { id: docSnap.id, ...docSnap.data() };
+              }
+              return null;
+            })
+          );
+          setCodeExamples(examples.filter(Boolean));
+        } catch (error) {
+          console.error('Kod örnekleri yüklenirken hata:', error);
+        }
+      }
+    };
+
+    fetchCodeExamples();
+  }, [post]);
+
   // Önceki ve sonraki postu bul
   const currentIndex = categoryPosts.findIndex(p => p.id === id);
   const previousPost = currentIndex > 0 ? categoryPosts[currentIndex - 1] : null;
@@ -68,6 +94,69 @@ export default function BlogPost() {
       navigate(location.state.from);
     } else {
       navigate('/');
+    }
+  };
+
+  // Post içeriğini render et
+  const renderContent = (block, index) => {
+    switch (block.type) {
+      case 'text':
+        return (
+          <div className="prose prose-invert max-w-none">
+            <ReactMarkdown>{block.content}</ReactMarkdown>
+          </div>
+        );
+      case 'code':
+        return (
+          <div className="rounded-lg overflow-hidden bg-gray-900 p-4">
+            <pre className="text-sm text-blue-200">
+              <code>{block.code}</code>
+            </pre>
+          </div>
+        );
+      case 'codeExample':
+        // Kod örneği bloğu
+        return (
+          <div className="bg-gray-800 rounded-lg overflow-hidden">
+            <div className="p-4">
+              {block.title && (
+                <h3 className="font-medium text-lg mb-2">{block.title}</h3>
+              )}
+              {block.description && (
+                <p className="text-sm text-gray-400">{block.description}</p>
+              )}
+            </div>
+            
+            {/* Kod bloğu */}
+            <div className="p-4 bg-gray-900">
+              {block.files?.map((file, fileIndex) => (
+                <div key={fileIndex} className="mb-4">
+                  <h4 className="text-sm font-medium mb-2">{file.name}</h4>
+                  <pre className="overflow-x-auto">
+                    <code className="text-sm text-blue-200">
+                      {file.code}
+                    </code>
+                  </pre>
+                </div>
+              ))}
+            </div>
+
+            {/* StackBlitz önizleme */}
+            {block.stackblitzUrl && (
+              <div className="p-4 border-t border-gray-700">
+                <iframe
+                  src={`${block.stackblitzUrl}?embed=1&view=preview&hideNavigation=1`}
+                  className="w-full h-[300px] border-0 rounded-lg"
+                  title={block.title || 'Preview'}
+                  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+                  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                />
+              </div>
+            )}
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
@@ -185,19 +274,7 @@ export default function BlogPost() {
               transition={{ delay: index * 0.1 }}
               className="overflow-x-auto"
             >
-              {block.type === 'text' ? (
-                <div className="prose prose-invert max-w-none">
-                  <ReactMarkdown>{block.content}</ReactMarkdown>
-                </div>
-              ) : block.type === 'code' ? (
-                <div className="rounded-lg overflow-hidden bg-gray-900 p-4">
-                  <pre className="text-sm text-blue-200">
-                    <code>{block.code}</code>
-                  </pre>
-                </div>
-              ) : block.type === 'example' ? (
-                <CodeExample exampleId={block.exampleId} />
-              ) : null}
+              {renderContent(block, index)}
             </motion.div>
           ))}
         </div>
@@ -230,6 +307,19 @@ export default function BlogPost() {
         <h2 className="text-xl font-bold mb-4">VSCode İkonu Örneği</h2>
         <CodePreview />
       </div>
+
+      {/* Kod örneklerini göster */}
+      {codeExamples.length > 0 && (
+        <div className="my-12 space-y-12">
+          <h2 className="text-2xl font-bold mb-6">Kod Örnekleri</h2>
+          {codeExamples.map((example) => (
+            <CodeExample 
+              key={example.id} 
+              example={example}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 } 

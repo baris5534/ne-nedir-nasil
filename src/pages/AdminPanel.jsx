@@ -3,10 +3,11 @@ import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'firebase
 import { db } from '../firebase/config';
 import MDEditor from '@uiw/react-md-editor';
 import CategoryManager from '../components/CategoryManager';
-import CodeScreen from '../components/Codescreen';
 import { useNavigate } from 'react-router-dom';
 import CodeExampleManager from '../components/CodeExampleManager';
 import { Tabs, TabsList, Tab, TabsContent } from '../components/ui/tabs';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 // Varsayılan dosya yapısı
 const defaultFileStructure = {
@@ -66,6 +67,10 @@ export default function AdminPanel() {
   const [newNodeType, setNewNodeType] = useState('file');
 
   const [codeExamples, setCodeExamples] = useState([]);
+  const [selectedCodeExamples, setSelectedCodeExamples] = useState([]);
+  const [availableCodeExamples, setAvailableCodeExamples] = useState([]);
+
+  const [highlighter, setHighlighter] = useState(null);
 
   useEffect(() => {
     const isAuthenticated = sessionStorage.getItem('isAdminAuthenticated') === 'true';
@@ -91,14 +96,33 @@ export default function AdminPanel() {
     fetchCategories();
   }, [fetchCategories]);
 
-  const addBlock = () => {
-    setBlocks([...blocks, currentBlock]);
-    setCurrentBlock({
-      type: 'text',
-      content: '',
-      code: '',
-      codeTitle: 'Terminal'
-    });
+  useEffect(() => {
+    getHighlighter({
+        theme: 'dracula',
+        langs: ['javascript', 'jsx', 'html', 'css', 'typescript']
+    }).then(h => setHighlighter(h));
+  }, []);
+
+  // Blok içeriğini güncelle
+  const updateBlock = (index, field, value) => {
+    setBlocks(blocks.map((block, i) => {
+      if (i === index) {
+        return { ...block, [field]: value };
+      }
+      return block;
+    }));
+  };
+
+  // Blok ekleme fonksiyonunu güncelle
+  const addBlock = (type) => {
+    const newBlock = {
+        type,
+        content: '',
+        code: type === 'code' ? '' : undefined,
+        codeTitle: type === 'code' ? 'Terminal' : undefined,
+        language: type === 'code' ? 'bash' : undefined
+    };
+    setBlocks(prev => [...prev, newBlock]);
   };
 
   const removeBlock = (index) => {
@@ -107,44 +131,59 @@ export default function AdminPanel() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (blocks.length === 0) {
-      alert('En az bir içerik bloğu eklemelisiniz!');
-      return;
+    if (!title.trim()) {
+        alert('Lütfen bir başlık girin');
+        return;
     }
-
+    if (blocks.length === 0) {
+        alert('En az bir içerik bloğu eklemelisiniz!');
+        return;
+    }
     if (selectedCategories.length === 0) {
-      alert('En az bir kategori seçmelisiniz!');
-      return;
+        alert('En az bir kategori seçmelisiniz!');
+        return;
     }
 
     setLoading(true);
     try {
-      const postData = {
-        title,
-        categories: selectedCategories,
-        blocks,
-        createdAt: editingPost ? editingPost.createdAt : new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+        const postData = {
+            title: title.trim(),
+            categories: selectedCategories,
+            blocks: blocks.map(block => {
+                if (block.type === 'codeExample') {
+                    return {
+                        type: 'codeExample',
+                        title: block.title,
+                        description: block.description,
+                        files: block.files,
+                        stackblitzUrl: block.stackblitzUrl,
+                        exampleId: block.exampleId
+                    };
+                }
+                return block;
+            }),
+            createdAt: new Date().toISOString()
+        };
 
-      if (editingPost) {
-        await updateDoc(doc(db, 'posts', editingPost.id), postData);
-        alert('Yazı güncellendi!');
-      } else {
         await addDoc(collection(db, 'posts'), postData);
-        alert('Yazı yayınlandı!');
-      }
-
-      // Formu sıfırla
-      setTitle('');
-      setSelectedCategories([]);
-      setBlocks([]);
-      setEditingPost(null);
+        
+        // Formu temizle
+        setTitle('');
+        setSelectedCategories([]);
+        setBlocks([]);
+        setCurrentBlock({
+            type: 'text',
+            content: '',
+            code: '',
+            codeTitle: 'Terminal'
+        });
+        
+        alert('Yazı başarıyla yayınlandı!');
     } catch (error) {
-      console.error('Error:', error);
-      alert('Bir hata oluştu!');
+        console.error('Error:', error);
+        alert('Bir hata oluştu!');
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
@@ -364,15 +403,59 @@ export default function AdminPanel() {
 
   // Kod örneklerini yükle
   useEffect(() => {
-    const fetchExamples = async () => {
+    const fetchCodeExamples = async () => {
       const snapshot = await getDocs(collection(db, 'codeExamples'));
-      setCodeExamples(snapshot.docs.map(doc => ({
+      const examples = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      })));
+      }));
+      setAvailableCodeExamples(examples);
     };
-    fetchExamples();
+    fetchCodeExamples();
   }, []);
+
+  // Kod örneği seçildiğinde çağrılacak fonksiyon
+  const handleCodeExampleSelect = (exampleId) => {
+    const example = availableCodeExamples.find(ex => ex.id === exampleId);
+    if (example) {
+      const newBlock = {
+        type: 'codeExample',
+        title: example.title,
+        description: example.description,
+        files: example.files,
+        stackblitzUrl: example.stackblitzUrl,
+        exampleId: example.id
+      };
+      setBlocks(prev => [...prev, newBlock]);
+    }
+  };
+
+  // Kod bloğunu render et
+  const renderCode = (code, language = 'javascript') => {
+    return (
+        <div className="relative bg-[#282A36] rounded-lg overflow-hidden">
+            <div className="absolute top-0 right-0 px-3 py-1 text-xs text-[#6272A4] bg-[#21222C] rounded-bl">
+                {language}
+            </div>
+            <div className="pt-8">
+                <SyntaxHighlighter
+                    language={language}
+                    style={dracula}
+                    showLineNumbers
+                    customStyle={{
+                        margin: 0,
+                        background: 'transparent',
+                        padding: '1rem',
+                        fontSize: '14px',
+                        fontFamily: "'Fira Code', monospace"
+                    }}
+                >
+                    {code}
+                </SyntaxHighlighter>
+            </div>
+        </div>
+    );
+  };
 
   return (
     <div className="max-w-4xl mx-auto py-4">
@@ -487,124 +570,131 @@ export default function AdminPanel() {
               <h2 className="text-xl font-bold mb-4">İçerik Blokları</h2>
               
               {/* Mevcut blokların listesi */}
-              {blocks.map((block, index) => (
-                <div key={index} className="mb-4 p-4 bg-gray-800 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-400">
-                      {block.type === 'text' ? 'Metin Bloğu' : 'Kod Bloğu'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeBlock(index)}
-                      className="text-red-500 hover:text-red-400"
-                    >
-                      Sil
-                    </button>
-                  </div>
-                  {block.type === 'text' ? (
-                    <div className="prose prose-invert max-w-none">
-                      <MDEditor.Markdown source={block.content} />
+              <div className="space-y-4">
+                {blocks.map((block, index) => (
+                  <div key={index} className="p-4 bg-gray-800 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-400">
+                        {block.type === 'text' ? 'Metin' : 
+                         block.type === 'code' ? 'Kod' : 
+                         'Kod Örneği'}
+                      </span>
+                      <button
+                        onClick={() => removeBlock(index)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        Sil
+                      </button>
                     </div>
-                  ) : (
-                    <CodeScreen code={block.code} title={block.codeTitle} />
-                  )}
-                </div>
-              ))}
 
-              {/* Yeni blok ekleme formu */}
-              <div className="mt-4 p-4 bg-gray-800 rounded-lg">
-                <div className="flex gap-4 mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentBlock({ ...currentBlock, type: 'text' })}
-                    className={`px-4 py-2 rounded ${
-                      currentBlock.type === 'text' ? 'bg-blue-600' : 'bg-gray-700'
-                    }`}
-                  >
-                    Metin
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentBlock({ ...currentBlock, type: 'code' })}
-                    className={`px-4 py-2 rounded ${
-                      currentBlock.type === 'code' ? 'bg-blue-600' : 'bg-gray-700'
-                    }`}
-                  >
-                    Kod
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentBlock({ ...currentBlock, type: 'example' })}
-                    className={`px-4 py-2 rounded ${
-                      currentBlock.type === 'example' ? 'bg-blue-600' : 'bg-gray-700'
-                    }`}
-                  >
-                    Kod Örneği
-                  </button>
-                </div>
-
-                {currentBlock.type === 'example' ? (
-                  <div>
-                    <label className="block mb-2">Kod Örneği Seç:</label>
-                    <select
-                      value={currentBlock.exampleId || ''}
-                      onChange={(e) => setCurrentBlock({ 
-                        type: 'example', 
-                        exampleId: e.target.value 
-                      })}
-                      className="w-full p-2 rounded bg-gray-700 border border-gray-600"
-                    >
-                      <option value="">Örnek seçin...</option>
-                      {codeExamples.map(example => (
-                        <option key={example.id} value={example.id}>
-                          {example.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : currentBlock.type === 'text' ? (
-                  <div>
-                    <label className="block mb-2">Metin İçeriği:</label>
-                    <MDEditor
-                      value={currentBlock.content}
-                      onChange={(value) => setCurrentBlock({ ...currentBlock, content: value })}
-                      preview="edit"
-                      height={200}
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <div className="mb-4">
-                      <label className="block mb-2">Kod Başlığı:</label>
-                      <input
-                        type="text"
-                        value={currentBlock.codeTitle}
-                        onChange={(e) => setCurrentBlock({ ...currentBlock, codeTitle: e.target.value })}
-                        className="w-full p-2 rounded bg-gray-700 border border-gray-600"
-                        placeholder="Örn: Terminal, src/App.jsx"
+                    {block.type === 'text' && (
+                      <MDEditor
+                        value={block.content}
+                        onChange={(value) => updateBlock(index, 'content', value)}
+                        preview="edit"
+                        className="bg-gray-900"
                       />
-                    </div>
-                    <label className="block mb-2">Kod:</label>
-                    <textarea
-                      value={currentBlock.code}
-                      onChange={(e) => setCurrentBlock({ ...currentBlock, code: e.target.value })}
-                      className="w-full p-2 rounded bg-gray-700 border border-gray-600 h-48 font-mono"
-                      placeholder="Kodunuzu buraya yazın..."
-                    />
-                    <div className="mt-4">
-                      <h3 className="text-lg font-semibold mb-2">Önizleme:</h3>
-                      <CodeScreen code={currentBlock.code} title={currentBlock.codeTitle} />
-                    </div>
-                  </div>
-                )}
+                    )}
 
+                    {block.type === 'code' && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={block.codeTitle}
+                            onChange={(e) => updateBlock(index, 'codeTitle', e.target.value)}
+                            placeholder="Başlık (örn: Terminal)"
+                            className="flex-1 px-3 py-2 bg-gray-900 rounded border border-gray-700 focus:border-blue-500 focus:outline-none"
+                          />
+                        </div>
+                        <div className="relative bg-[#282A36] rounded-lg overflow-hidden">
+                          <div className="absolute top-0 right-0 px-3 py-1 text-xs text-[#6272A4] bg-[#21222C] rounded-bl">
+                            {block.codeTitle || 'Terminal'}
+                          </div>
+                          <div className="pt-8 relative">
+                            <div className="absolute inset-0 pt-8">
+                              <textarea
+                                value={block.code}
+                                onChange={(e) => updateBlock(index, 'code', e.target.value)}
+                                placeholder="Kodu buraya yazın..."
+                                className="w-full h-full p-4 bg-transparent text-gray-200 font-mono text-sm focus:outline-none resize-y"
+                                style={{
+                                  caretColor: '#fff',
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  zIndex: 2
+                                }}
+                              />
+                            </div>
+                            <div style={{ pointerEvents: 'none' }}>
+                              <SyntaxHighlighter
+                                language="bash"
+                                style={dracula}
+                                showLineNumbers
+                                customStyle={{
+                                  margin: 0,
+                                  background: 'transparent',
+                                  padding: '1rem',
+                                  fontSize: '14px',
+                                  fontFamily: "'Fira Code', monospace",
+                                  minHeight: '8rem'
+                                }}
+                              >
+                                {block.code || ' '}
+                              </SyntaxHighlighter>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {block.type === 'codeExample' && (
+                      <div>
+                        <h3 className="font-medium mb-2">{block.title}</h3>
+                        <p className="text-sm text-gray-400">{block.description}</p>
+                        {block.files?.map((file, fileIndex) => (
+                          <div key={fileIndex} className="mt-2">
+                            <div className="text-sm text-blue-400">{file.name}</div>
+                            {renderCode(file.code, file.name.split('.').pop())}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Blok ekleme butonları */}
+              <div className="flex gap-2 mb-4">
                 <button
                   type="button"
-                  onClick={addBlock}
-                  className="mt-4 w-full p-2 bg-green-600 hover:bg-green-700 rounded"
+                  onClick={() => addBlock('text')}
+                  className="px-3 py-1 bg-blue-600 rounded-lg text-sm"
                 >
-                  Bloğu Ekle
+                  + Metin Ekle
                 </button>
+                <button
+                  type="button"
+                  onClick={() => addBlock('code')}
+                  className="px-3 py-1 bg-blue-600 rounded-lg text-sm"
+                >
+                  + Kod Ekle
+                </button>
+                <select
+                  onChange={(e) => handleCodeExampleSelect(e.target.value)}
+                  className="px-3 py-1 bg-gray-700 rounded-lg text-sm"
+                  value=""
+                >
+                  <option value="" disabled>+ Kod Örneği Ekle</option>
+                  {availableCodeExamples.map(example => (
+                    <option key={example.id} value={example.id}>
+                      {example.title}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
