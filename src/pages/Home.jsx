@@ -89,7 +89,24 @@ export default function Home() {
             </div>
           </div>
         </section>
-
+        <div>
+          {/* Kategorileri Listele */}
+          {/* <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-6 gap-3">
+            {categories.map(category => (
+              <Link 
+                key={category.id}
+                to={`/category/${category.name}`}
+                className="bg-gray-800/50 backdrop-blur-sm border  border-gray-700/50 rounded-full p-2 hover:bg-gray-700/50 transition-colors"
+              >
+                <div className="flex items-center gap-1   text-center justify-center w-auto ">
+                  <CategoryIcon name={category.name} className="w-6 h-6 text-blue-400" />
+                  <span className="font-medium text-xs text-white ">{category.name}</span>
+                </div>
+               
+              </Link>
+            ))}
+          </div>*/}
+        </div> 
         {/* Kategorilere Göre Yazılar */}
         <div className="max-w-7xl mx-auto px-4 space-y-12">
           {categories.map(category => {

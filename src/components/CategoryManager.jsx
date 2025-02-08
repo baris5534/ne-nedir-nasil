@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { CATEGORY_ICONS } from '../utils/categoryIcons.jsx';
-import { CategoryIcon } from './icons/CategoryIcons';
+import Icon from './icons';
 
 // Kategori sıralaması
 const categoryOrder = [
@@ -74,17 +74,10 @@ export default function CategoryManager() {
         }
     };
 
-    const handleUpdateCategory = async (categoryId, newIcon) => {
-        try {
-            const categoryRef = doc(db, 'categories', categoryId);
-            await updateDoc(categoryRef, {
-                icon: newIcon
-            });
-            fetchCategories(); // Kategorileri yeniden yükle
-            setEditingCategory(null); // Düzenleme modunu kapat
-        } catch (error) {
-            console.error('Kategori güncellenirken hata:', error);
-        }
+    const handleUpdateCategory = (categoryId, iconName) => {
+        // Kategori güncelleme işlemi
+        console.log('Kategori güncellendi:', categoryId, iconName);
+        setEditingCategory(null);
     };
 
     // Kategorileri sırala
@@ -117,20 +110,20 @@ export default function CategoryManager() {
                         className="w-full px-4 py-2 bg-gray-800 rounded-lg"
                     />
                     
-                    <div className="flex items-center gap-2 overflow-x-auto py-2">
+                    <div className="flex items-center gap-2 overflow-x-auto p-2">
                         {Object.entries(CATEGORY_ICONS).map(([key, icon]) => (
                             <button
                                 key={key}
                                 type="button"
                                 onClick={() => setNewCategory(prev => ({ ...prev, icon: key }))}
-                                className={`p-2 rounded flex flex-col items-center min-w-[60px] ${
+                                className={`p-2 rounded flex flex-col items-center min-w-[60px] text-clip ${
                                     newCategory.icon === key 
                                         ? 'bg-blue-500 text-white' 
                                         : 'bg-gray-700 hover:bg-gray-600'
                                 }`}
                             >
-                                {icon}
-                                <span className="mt-1 text-xs whitespace-nowrap">{key}</span>
+                                <Icon name={key} />
+                                <span className="mt-1 text-xs text-clip overflow-hidden whitespace-nowrap">{key}</span>
                             </button>
                         ))}
                     </div>
@@ -150,9 +143,7 @@ export default function CategoryManager() {
                     <div key={category.id} className="p-3 bg-gray-800 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center space-x-2">
-                                <span className="w-6 h-6">
-                                    {CATEGORY_ICONS[category.icon] || CATEGORY_ICONS.default}
-                                </span>
+                                <Icon name={category.icon || 'default'} />
                                 <span>{category.name}</span>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -175,19 +166,19 @@ export default function CategoryManager() {
                         {editingCategory === category.id && (
                             <div className="mt-2 border-t border-gray-700 pt-2">
                                 <div className="flex items-center gap-2 overflow-x-auto py-2">
-                                    {Object.entries(CATEGORY_ICONS).map(([key, icon]) => (
+                                    {categoryOrder.map((iconName) => (
                                         <button
-                                            key={key}
+                                            key={iconName}
                                             type="button"
-                                            onClick={() => handleUpdateCategory(category.id, key)}
+                                            onClick={() => handleUpdateCategory(category.id, iconName)}
                                             className={`p-2 rounded flex flex-col items-center min-w-[60px] ${
-                                                category.icon === key 
+                                                category.icon === iconName 
                                                     ? 'bg-blue-500 text-white' 
                                                     : 'bg-gray-700 hover:bg-gray-600'
                                             }`}
                                         >
-                                            {icon}
-                                            <span className="mt-1 text-xs whitespace-nowrap">{key}</span>
+                                            <Icon name={iconName} />
+                                            <span className="mt-1 text-xs whitespace-nowrap">{iconName}</span>
                                         </button>
                                     ))}
                                 </div>

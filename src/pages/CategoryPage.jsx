@@ -4,7 +4,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import { CategoryIcon } from '../components/icons/CategoryIcons';
+import { CategoryIcon } from '../components/icons/index';
 import { motion } from 'framer-motion';
 
 export default function CategoryPage() {
