@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
-import { CategoryIcon } from '../components/icons/index';
 import { motion } from 'framer-motion';
+import { CategoryIcon } from '../components/icons/index';
 
 export default function CategoryPage() {
     const { categoryName } = useParams();
@@ -60,11 +59,23 @@ export default function CategoryPage() {
                 <title>{categoryName} Yazıları</title>
             </Helmet>
 
-            <div className="mb-8 flex items-center gap-3">
-                <CategoryIcon name={categoryName} className="w-8 h-8 text-blue-400" />
-                <h1 className="text-2xl font-bold text-blue-100">
-                    {categoryName} Yazıları
-                </h1>
+            <div className="flex items-center gap-4 mb-8">
+                <Link 
+                    to="/"
+                    className="flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span>Geri</span>
+                </Link>
+
+                <div className="flex items-center gap-3">
+                    <CategoryIcon name={categoryName} className="w-8 h-8 text-blue-400" />
+                    <h1 className="text-2xl font-bold text-blue-100">
+                        {categoryName} Yazıları
+                    </h1>
+                </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -73,6 +84,7 @@ export default function CategoryPage() {
                         key={post.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
                     >
                         <Link 
                             to={`/blog/${post.id}`}

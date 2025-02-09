@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Icon from '../components/icons';
+import Icon from '../components/icons/index';
 
 // Kategori sıralaması
 export const categoryOrder = [
@@ -14,6 +14,7 @@ export const categoryOrder = [
     'react',
     'nextjs',
     'vitejs',
+    'vite',
     'visualstudiocode',
     'framermotion',
     'tailwind',
@@ -34,9 +35,10 @@ export const CATEGORY_ICONS = {
     css: <Icon name="css" />,
     typescript: <Icon name="typescript" />,
     nextjs: <Icon name="nextjs" />,
-    vitejs: <Icon name="vitejs" />,
+    vitejs: <Icon name="vitejs" className="lg:hidden flex"/>,
+    vite: <Icon name="vite" className="lg:flex hidden" />,
     reactrouter: <Icon name="react-router" />,
-    visualstudiocode: <Icon name="visualstudiocode" />,
+    vscode: <Icon name="vscode" />,
     seo: <Icon name="seo" />,
     önerilenler: <Icon name="önerilenler" />,
     yeni: <Icon name="yeni" />,

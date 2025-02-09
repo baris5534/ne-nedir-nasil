@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { CategoryIcon } from '../components/icons/index';
+import { CategoryIcon } from '../components/icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
 import PropTypes from 'prop-types';
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import MDEditor from '@uiw/react-md-editor';
 import CategoryManager from '../components/CategoryManager';
@@ -70,28 +70,58 @@ export default function AdminPanel() {
 	// Form gönderme
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		if (!title.trim() || blocks.length === 0 || selectedCategories.length === 0) {
-			alert('Lütfen tüm gerekli alanları doldurun');
+		
+		// Form validasyonu
+		if (!title.trim()) {
+			alert('Başlık alanı boş olamaz');
+			return;
+		}
+		if (selectedCategories.length === 0) {
+			alert('En az bir kategori seçmelisiniz');
+			return;
+		}
+		if (blocks.length === 0) {
+			alert('En az bir içerik bloğu eklemelisiniz');
+			return;
+		}
+
+		// Blokları temizle ve kontrol et
+		const cleanBlocks = blocks.filter(block => {
+			return block && block.type && block.content && block.content.trim() !== '';
+		}).map(block => ({
+			type: block.type,
+			content: block.content.trim(),
+			language: block.language || null // Eğer kod bloğu değilse null olarak ayarla
+		}));
+
+		if (cleanBlocks.length === 0) {
+			alert('Geçerli içerik bloğu bulunamadı');
 			return;
 		}
 
 		setLoading(true);
 		try {
+			const timestamp = serverTimestamp();
+			
 			const postData = {
 				title: title.trim(),
 				categories: selectedCategories,
-				blocks,
-				createdAt: new Date().toISOString()
+				blocks: cleanBlocks,
+				createdAt: timestamp
 			};
 
-			await addDoc(collection(db, 'posts'), postData);
+			console.log('Gönderilecek veri:', postData);
+
+			const docRef = await addDoc(collection(db, 'posts'), postData);
+			console.log('Döküman ID:', docRef.id);
+
 			setTitle('');
 			setSelectedCategories([]);
 			setBlocks([]);
 			alert('Yazı başarıyla yayınlandı!');
 		} catch (error) {
-			console.error('Error:', error);
-			alert('Bir hata oluştu!');
+			console.error('Hata detayı:', error);
+			alert(`Yazı eklenirken hata oluştu: ${error.message}`);
 		} finally {
 			setLoading(false);
 		}
