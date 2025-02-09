@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { CategoryIcon } from '../components/icons/CategoryIcons';
+import CategoryIcon from '../components/icons/CategoryIcons';
 
 // Kategori sıralaması
 export const CATEGORY_ORDER = [
@@ -16,7 +16,7 @@ export const CATEGORY_ORDER = [
 ];
 
 // Kategori ikonu bileşeni
-export const Icon = ({ name, className }) => {
+const Icon = ({ name, className }) => {
   return <CategoryIcon name={name} className={className} />;
 };
 
