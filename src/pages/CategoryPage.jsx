@@ -1,10 +1,11 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
-import { CategoryIcon } from '../components/icons/index';
+import CategoryIcon from '../components/icons/CategoryIcons';
 
 export default function CategoryPage() {
     const { categoryName } = useParams();
