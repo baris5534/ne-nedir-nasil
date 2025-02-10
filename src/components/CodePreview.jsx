@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CategoryIcon } from './icons/CategoryIcons';
+import CategoryIcon from './icons/CategoryIcons';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
@@ -8,14 +8,27 @@ export default function CodePreview({ exampleId }) {
     const [activeTab, setActiveTab] = useState('preview'); // 'preview' veya 'code'
 
     useEffect(() => {
+        let isMounted = true;
+
         const fetchExample = async () => {
-            const docRef = doc(db, 'codeExamples', exampleId);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                setExample(docSnap.data());
+            try {
+                const docRef = doc(db, 'codeExamples', exampleId);
+                const docSnap = await getDoc(docRef);
+                if (isMounted && docSnap.exists()) {
+                    setExample(docSnap.data());
+                }
+            } catch (error) {
+                console.error('Error fetching example:', error);
             }
         };
-        fetchExample();
+
+        if (exampleId) {
+            fetchExample();
+        }
+
+        return () => {
+            isMounted = false;
+        };
     }, [exampleId]);
 
     if (!example) return null;

@@ -3,12 +3,12 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { Helmet } from 'react-helmet-async';
-import { CATEGORY_ICONS } from '../utils/categoryIcons.jsx';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { Link } from 'react-router-dom';
 import CodePreview from '../components/CodePreview';
 import CodeExample from '../components/CodeExample';
+import CategoryIcon from '../components/icons/CategoryIcons';
 
 export default function BlogPost() {
   const { id } = useParams();

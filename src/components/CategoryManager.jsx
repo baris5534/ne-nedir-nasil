@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
-import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { CategoryIcon } from './icons/CategoryIcons';
-import { CATEGORY_ICONS } from '../utils/categoryIcons.jsx';
+import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import CategoryIcon from './icons/CategoryIcons';
 
 // Kategori sıralaması
 const categoryOrder = [
@@ -13,13 +12,10 @@ const categoryOrder = [
     'react',
     'nextjs',
     'vitejs',
+    'vite',
     'tailwind',
     'framermotion',
-    'visualstudiocode',
-    'mobile',
-    'responsive',
-    'performance',
-    'seo'
+    'visualstudiocode'
 ];
 
 export default function CategoryManager() {

@@ -1,5 +1,6 @@
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import PropTypes from 'prop-types';
 
 // Dosya uzantılarına göre ikonlar
 const fileIcons = {
@@ -53,7 +54,7 @@ const getFileIcon = (fileName) => {
   return fileIcons[extension] || fileIcons.default;
 };
 
-export default function CodeScreen({ code, title = "Terminal" }) {
+export default function CodeScreen({ code, language, fileName, title = "Terminal" }) {
   // Dosya ağacını oluştur
   const renderFileTree = () => {
     if (!title.includes('/')) return null;
@@ -101,7 +102,7 @@ export default function CodeScreen({ code, title = "Terminal" }) {
 
       {/* Code Content */}
       <SyntaxHighlighter
-        language="javascript"
+        language={language}
         style={vscDarkPlus}
         customStyle={{
           margin: 0,
@@ -114,3 +115,10 @@ export default function CodeScreen({ code, title = "Terminal" }) {
     </div>
   );
 }
+
+CodeScreen.propTypes = {
+  code: PropTypes.string.isRequired,
+  language: PropTypes.string,
+  fileName: PropTypes.string,
+  title: PropTypes.string
+};

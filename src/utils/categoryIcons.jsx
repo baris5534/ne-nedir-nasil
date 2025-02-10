@@ -25,4 +25,6 @@ Icon.propTypes = {
   className: PropTypes.string
 };
 
+export { CategoryIcon };
+
 export default Icon; 
