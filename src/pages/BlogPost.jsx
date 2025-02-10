@@ -304,7 +304,6 @@ export default function BlogPost() {
       </div>
 
       <div className="my-8">
-        <h2 className="text-xl font-bold mb-4">VSCode İkonu Örneği</h2>
         <CodePreview />
       </div>
 
