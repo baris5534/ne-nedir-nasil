@@ -1,68 +1,95 @@
-import { useState, useEffect, useCallback } from 'react';
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { collection, getDocs, deleteDoc, doc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import MDEditor from '@uiw/react-md-editor';
+import PostList from '../components/PostList';
 import CategoryManager from '../components/CategoryManager';
-import { useNavigate } from 'react-router-dom';
 import CodeExampleManager from '../components/CodeExampleManager';
-import { Tabs, TabsList, Tab, TabsContent } from '../components/ui/tabs';
 
 export default function AdminPanel() {
-	const navigate = useNavigate();
-	const [title, setTitle] = useState('');
-	const [selectedCategories, setSelectedCategories] = useState([]);
-	const [categories, setCategories] = useState([]);
-	const [loading, setLoading] = useState(false);
-	const [blocks, setBlocks] = useState([]);
+	const [activeTab, setActiveTab] = useState('posts');
 	const [posts, setPosts] = useState([]);
-	const [editingPost, setEditingPost] = useState(null);
+	const [loading, setLoading] = useState(true);
+	const [newPost, setNewPost] = useState({
+		title: '',
+		content: ''
+	});
+	const [title, setTitle] = useState('');
+	const [blocks, setBlocks] = useState([]);
+	const [categories, setCategories] = useState([]);
+	const [selectedCategories, setSelectedCategories] = useState([]);
 
-	// Auth kontrolü
+	// Yazıları getir
 	useEffect(() => {
-		const isAuthenticated = sessionStorage.getItem('isAdminAuthenticated') === 'true';
-		if (!isAuthenticated) {
-			navigate('/admin-login');
-		}
-	}, [navigate]);
+		const fetchPosts = async () => {
+			try {
+				const querySnapshot = await getDocs(collection(db, 'posts'));
+				const postsData = querySnapshot.docs.map(doc => ({
+					id: doc.id,
+					...doc.data()
+				})).sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
+				
+				setPosts(postsData);
+			} catch (error) {
+				console.error('Yazılar yüklenirken hata:', error);
+				alert('Yazılar yüklenirken bir hata oluştu');
+			} finally {
+				setLoading(false);
+			}
+		};
 
-	// Kategorileri getir
-	const fetchCategories = useCallback(async () => {
-		try {
-			const querySnapshot = await getDocs(collection(db, 'categories'));
-			const categoriesData = querySnapshot.docs.map(doc => ({
-				id: doc.id,
-				...doc.data()
-			}));
-			setCategories(categoriesData);
-		} catch (error) {
-			console.error('Kategoriler yüklenirken hata:', error);
-		}
+		fetchPosts();
 	}, []);
 
+	// Kategorileri getir
 	useEffect(() => {
-		fetchCategories();
-	}, [fetchCategories]);
-
-	// Blok işlemleri
-	const addBlock = (type) => {
-		const newBlock = {
-			type,
-			content: '',
-			code: type === 'code' ? '' : undefined,
-			codeTitle: type === 'code' ? 'Terminal' : undefined
-		};
-		setBlocks(prev => [...prev, newBlock]);
-	};
-
-	const updateBlock = (index, field, value) => {
-		setBlocks(blocks.map((block, i) => {
-			if (i === index) {
-				return { ...block, [field]: value };
+		const fetchCategories = async () => {
+			try {
+				const querySnapshot = await getDocs(collection(db, 'categories'));
+				const categoriesData = querySnapshot.docs.map(doc => ({
+					id: doc.id,
+					...doc.data()
+				}));
+				setCategories(categoriesData);
+			} catch (error) {
+				console.error('Kategoriler yüklenirken hata:', error);
 			}
-			return block;
-		}));
+		};
+
+		fetchCategories();
+	}, []);
+
+	// Yazı silme
+	const handleDelete = async (postId) => {
+		if (window.confirm('Bu yazıyı silmek istediğinizden emin misiniz?')) {
+			try {
+				await deleteDoc(doc(db, 'posts', postId));
+				setPosts(posts.filter(post => post.id !== postId));
+				alert('Yazı başarıyla silindi');
+			} catch (error) {
+				console.error('Silme hatası:', error);
+				alert('Yazı silinirken bir hata oluştu');
+			}
+		}
 	};
 
+	// Blok ekleme fonksiyonları
+	const addTextBlock = () => {
+		setBlocks([...blocks, { type: 'text', content: '' }]);
+	};
+
+	const addCodeBlock = () => {
+		setBlocks([...blocks, { type: 'code', code: '', codeTitle: '' }]);
+	};
+
+	// Blok güncelleme
+	const updateBlock = (index, field, value) => {
+		const newBlocks = [...blocks];
+		newBlocks[index] = { ...newBlocks[index], [field]: value };
+		setBlocks(newBlocks);
+	};
+
+	// Blok silme
 	const removeBlock = (index) => {
 		setBlocks(blocks.filter((_, i) => i !== index));
 	};
@@ -70,197 +97,207 @@ export default function AdminPanel() {
 	// Form gönderme
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		
-		// Form validasyonu
+
 		if (!title.trim()) {
-			alert('Başlık alanı boş olamaz');
+			alert('Lütfen bir başlık girin');
 			return;
 		}
-		if (selectedCategories.length === 0) {
-			alert('En az bir kategori seçmelisiniz');
-			return;
-		}
+
 		if (blocks.length === 0) {
-			alert('En az bir içerik bloğu eklemelisiniz');
+			alert('En az bir içerik bloğu ekleyin');
 			return;
 		}
 
-		// Blokları temizle ve kontrol et
-		const cleanBlocks = blocks.filter(block => {
-			return block && block.type && block.content && block.content.trim() !== '';
-		}).map(block => ({
-			type: block.type,
-			content: block.content.trim(),
-			language: block.language || null // Eğer kod bloğu değilse null olarak ayarla
-		}));
-
-		if (cleanBlocks.length === 0) {
-			alert('Geçerli içerik bloğu bulunamadı');
-			return;
-		}
-
-		setLoading(true);
 		try {
-			const timestamp = serverTimestamp();
-			
 			const postData = {
 				title: title.trim(),
+				blocks: blocks,
 				categories: selectedCategories,
-				blocks: cleanBlocks,
-				createdAt: timestamp
+				createdAt: serverTimestamp()
 			};
 
-			console.log('Gönderilecek veri:', postData);
-
-			const docRef = await addDoc(collection(db, 'posts'), postData);
-			console.log('Döküman ID:', docRef.id);
-
+			await addDoc(collection(db, 'posts'), postData);
+			
+			// Formu temizle
 			setTitle('');
-			setSelectedCategories([]);
 			setBlocks([]);
-			alert('Yazı başarıyla yayınlandı!');
+			setSelectedCategories([]);
+			
+			alert('Yazı başarıyla eklendi');
 		} catch (error) {
-			console.error('Hata detayı:', error);
-			alert(`Yazı eklenirken hata oluştu: ${error.message}`);
-		} finally {
-			setLoading(false);
+			console.error('Ekleme hatası:', error);
+			alert('Yazı eklenirken bir hata oluştu');
+		}
+	};
+
+	const renderTabContent = () => {
+		switch (activeTab) {
+			case 'posts':
+				return (
+					<>
+						{/* Yeni yazı ekleme */}
+						<div className="bg-gray-800 p-6 rounded-lg">
+							<h2 className="text-2xl font-bold mb-6">Yeni Yazı Ekle</h2>
+							<form onSubmit={handleSubmit} className="space-y-6">
+								{/* Başlık */}
+								<div>
+									<label className="block text-sm font-medium mb-2">Başlık</label>
+									<input
+										type="text"
+										value={title}
+										onChange={(e) => setTitle(e.target.value)}
+										className="w-full p-2 bg-gray-700 rounded"
+										placeholder="Yazı başlığı"
+									/>
+								</div>
+
+								{/* Kategoriler */}
+								<div>
+									<label className="block text-sm font-medium mb-2">Kategoriler</label>
+									<div className="flex flex-wrap gap-2">
+										{categories.map(category => (
+											<button
+												key={category.id}
+												type="button"
+												onClick={() => {
+													if (selectedCategories.includes(category.name)) {
+														setSelectedCategories(selectedCategories.filter(c => c !== category.name));
+													} else {
+														setSelectedCategories([...selectedCategories, category.name]);
+													}
+												}}
+												className={`px-3 py-1 rounded-full text-sm ${
+													selectedCategories.includes(category.name)
+														? 'bg-blue-500 text-white'
+														: 'bg-gray-700 text-gray-300'
+												}`}
+											>
+												{category.name}
+											</button>
+										))}
+									</div>
+								</div>
+
+								{/* İçerik Blokları */}
+								<div className="space-y-4">
+									{blocks.map((block, index) => (
+										<div key={index} className="bg-gray-800 p-4 rounded-lg">
+											{block.type === 'text' ? (
+												<MDEditor
+													value={block.content}
+													onChange={(value) => updateBlock(index, 'content', value)}
+													preview="edit"
+												/>
+											) : (
+												<div className="space-y-2">
+													<input
+														type="text"
+														value={block.codeTitle}
+														onChange={(e) => updateBlock(index, 'codeTitle', e.target.value)}
+														className="w-full p-2 bg-gray-700 rounded"
+														placeholder="Kod başlığı"
+													/>
+													<textarea
+														value={block.code}
+														onChange={(e) => updateBlock(index, 'code', e.target.value)}
+														className="w-full p-2 bg-gray-700 rounded font-mono"
+														rows="5"
+														placeholder="Kodu buraya yazın..."
+													/>
+												</div>
+											)}
+											<button
+												type="button"
+												onClick={() => removeBlock(index)}
+												className="mt-2 text-red-500 text-sm"
+											>
+												Bloğu Sil
+											</button>
+										</div>
+									))}
+								</div>
+
+								{/* Blok Ekleme Butonları */}
+								<div className="flex gap-2">
+									<button
+										type="button"
+										onClick={addTextBlock}
+										className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
+									>
+										+ Yazı Bloğu Ekle
+									</button>
+									<button
+										type="button"
+										onClick={addCodeBlock}
+										className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
+									>
+										+ Kod Bloğu Ekle
+									</button>
+								</div>
+
+								{/* Gönder Butonu */}
+								<button
+									type="submit"
+									className="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600"
+								>
+									Yazıyı Yayınla
+								</button>
+							</form>
+						</div>
+
+						{/* Mevcut yazıları görüntüleme */}
+						<div className="mb-8">
+							<PostList />
+						</div>
+					</>
+				);
+			case 'categories':
+				return <CategoryManager />;
+			case 'codeExamples':
+				return <CodeExampleManager />;
+			default:
+				return null;
 		}
 	};
 
 	return (
-		<div className="max-w-4xl mx-auto py-4 px-4">
-			<Tabs defaultValue="posts">
-				<TabsList>
-					<Tab value="posts">Yazılar</Tab>
-					<Tab value="categories">Kategoriler</Tab>
-					<Tab value="code-examples">Kod Örnekleri</Tab>
-				</TabsList>
+		<div className="container mx-auto p-4">
+			{/* Tab Menüsü */}
+			<div className="flex space-x-4 mb-6">
+				<button
+					onClick={() => setActiveTab('posts')}
+					className={`px-4 py-2 rounded-lg ${
+						activeTab === 'posts' 
+							? 'bg-blue-500 text-white' 
+							: 'bg-gray-700 hover:bg-gray-600'
+					}`}
+				>
+					Yazılar
+				</button>
+				<button
+					onClick={() => setActiveTab('categories')}
+					className={`px-4 py-2 rounded-lg ${
+						activeTab === 'categories' 
+							? 'bg-blue-500 text-white' 
+							: 'bg-gray-700 hover:bg-gray-600'
+					}`}
+				>
+					Kategoriler
+				</button>
+				<button
+					onClick={() => setActiveTab('codeExamples')}
+					className={`px-4 py-2 rounded-lg ${
+						activeTab === 'codeExamples' 
+							? 'bg-blue-500 text-white' 
+							: 'bg-gray-700 hover:bg-gray-600'
+					}`}
+				>
+					Kod Örnekleri
+				</button>
+			</div>
 
-				<TabsContent value="posts">
-					<form onSubmit={handleSubmit} className="space-y-6">
-						{/* Başlık */}
-						<div>
-							<label className="block mb-2">Başlık:</label>
-							<input
-								type="text"
-								value={title}
-								onChange={(e) => setTitle(e.target.value)}
-								className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500"
-								required
-							/>
-						</div>
-
-						{/* Kategoriler */}
-						<div>
-							<label className="block mb-2">Kategoriler:</label>
-							<div className="flex flex-wrap gap-2">
-								{categories.map(category => (
-									<button
-										key={category.id}
-										type="button"
-										onClick={() => {
-											setSelectedCategories(prev => {
-												if (prev.includes(category.name)) {
-													return prev.filter(cat => cat !== category.name);
-												}
-												return [...prev, category.name];
-											});
-										}}
-										className={`px-3 py-1.5 rounded text-sm ${
-											selectedCategories.includes(category.name)
-												? 'bg-blue-500 text-white'
-												: 'bg-gray-700 text-blue-300 hover:bg-gray-600'
-										}`}
-									>
-										{category.name}
-									</button>
-								))}
-							</div>
-						</div>
-
-						{/* İçerik Blokları */}
-						<div className="space-y-4">
-							{blocks.map((block, index) => (
-								<div key={index} className="p-4 bg-gray-800 rounded-lg">
-									<div className="flex justify-between items-center mb-2">
-										<span className="text-sm text-gray-400">
-											{block.type === 'text' ? 'Metin' : 'Kod'}
-										</span>
-										<button
-											type="button"
-											onClick={() => removeBlock(index)}
-											className="text-red-400 hover:text-red-300"
-										>
-											Sil
-										</button>
-									</div>
-
-									{block.type === 'text' ? (
-										<MDEditor
-											value={block.content}
-											onChange={(value) => updateBlock(index, 'content', value)}
-											preview="edit"
-										/>
-									) : (
-										<div className="space-y-2">
-											<input
-												type="text"
-												value={block.codeTitle}
-												onChange={(e) => updateBlock(index, 'codeTitle', e.target.value)}
-												placeholder="Başlık (örn: Terminal)"
-												className="w-full px-3 py-2 bg-gray-900 rounded"
-											/>
-											<textarea
-												value={block.code}
-												onChange={(e) => updateBlock(index, 'code', e.target.value)}
-												placeholder="Kodu buraya yazın..."
-												className="w-full h-32 p-4 bg-gray-900 text-gray-200 font-mono text-sm rounded"
-											/>
-										</div>
-									)}
-								</div>
-							))}
-						</div>
-
-						{/* Blok Ekleme Butonları */}
-						<div className="flex gap-2">
-							<button
-								type="button"
-								onClick={() => addBlock('text')}
-								className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500"
-							>
-								+ Metin Ekle
-							</button>
-							<button
-								type="button"
-								onClick={() => addBlock('code')}
-								className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500"
-							>
-								+ Kod Ekle
-							</button>
-						</div>
-
-						{/* Submit Button */}
-						<button
-							type="submit"
-							disabled={loading}
-							className={`w-full py-2 rounded ${
-								loading ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-500'
-							}`}
-						>
-							{loading ? 'Yükleniyor...' : 'Yayınla'}
-						</button>
-					</form>
-				</TabsContent>
-
-				<TabsContent value="categories">
-					<CategoryManager onCategoryAdded={fetchCategories} />
-				</TabsContent>
-
-				<TabsContent value="code-examples">
-					<CodeExampleManager />
-				</TabsContent>
-			</Tabs>
+			{/* Tab İçeriği */}
+			{renderTabContent()}
 		</div>
 	);
 }
